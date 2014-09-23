@@ -590,9 +590,14 @@ void board_init_r(gd_t *id, ulong dest_addr)
 #endif
 
 #if defined(CONFIG_CMD_NAND)
+#if defined(CONFIG_NAND_MTD)
 	puts("NAND:  ");
 	nand_init();		/* go init the NAND */
+#elif defined(CONFIG_NAND_FTL)
+	puts("NAND FTL:  ");
+	nand_ftl_init();		/* go init the NAND */
 #endif
+#endif /* CONFIG_CMD_NAND */
 
 #if defined(CONFIG_CMD_ONENAND)
 	onenand_init();

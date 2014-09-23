@@ -27,8 +27,12 @@ LIB 	= $(obj)lib$(CPU)-devices.o
 ARCH_CFLAGS	+= 	-I$(TOPDIR)/include
 
 COBJS-$(CONFIG_PWM)					+= pwm.o
-COBJS-$(CONFIG_MTD_NAND_NEXELL)		+= nand.o
-COBJS-$(CONFIG_MTD_NAND_ECC_HW)		+= nand_ecc.o
+ifdef CONFIG_NAND_MTD
+COBJS-$(CONFIG_MTD_NAND_NEXELL)                += nand.o
+COBJS-$(CONFIG_MTD_NAND_ECC_HW)                += nand_ecc.o
+else
+COBJS-$(CONFIG_NAND_FTL)                       += nand_ftl.o
+endif
 COBJS-$(CONFIG_CMD_I2C)			+= i2c.o
 COBJS-$(CONFIG_LCD)			+= lcd.o
 COBJS-$(CONFIG_SPI)			+= spi.o

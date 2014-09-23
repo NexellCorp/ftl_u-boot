@@ -3515,7 +3515,7 @@ int nand_scan_tail(struct mtd_info *mtd)
 	if (chip->options & NAND_SKIP_BBTSCAN)
 		chip->options |= NAND_BBT_SCANNED;
 
-#if (1)
+#if defined(CONFIG_NAND_MTD)
 	return nand_ecc_post_scan(mtd);
 #else
 	return 0;

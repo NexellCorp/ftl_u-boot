@@ -36,6 +36,7 @@ MIO_UBOOT_EXT int mio_format(int _format_type);
 MIO_UBOOT_EXT int mio_init(void);
 MIO_UBOOT_EXT int mio_deinit(void);
 MIO_UBOOT_EXT int mio_info(void);
+MIO_UBOOT_EXT int get_mio_capacity(void);
 
 /******************************************************************************
  * block device interface

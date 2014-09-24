@@ -594,6 +594,7 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	puts("NAND:  ");
 	nand_init();		/* go init the NAND */
 #elif defined(CONFIG_NAND_FTL)
+#include <nand_ftl.h>
 	puts("NAND FTL:  ");
 	nand_ftl_init();		/* go init the NAND */
 #endif

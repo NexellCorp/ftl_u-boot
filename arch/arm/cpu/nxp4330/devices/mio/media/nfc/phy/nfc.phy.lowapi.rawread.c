@@ -59,12 +59,14 @@
 #include <linux/wait.h>
 #include <linux/vmalloc.h>
 #include <linux/gfp.h>
+#include <linux/math64.h>
 
 #define DBG_PHY_LOWAPI_RAW(fmt, args...) printk(fmt, ##args)
 //#define DBG_PHY_LOWAPI_RAW(fmt, args...)
 
 #elif defined (__BUILD_MODE_ARM_UBOOT_DEVICE_DRIVER__)
 #include <div64.h>
+#include <linux/math64.h>
 #include <common.h>
 #include <malloc.h>
 
@@ -110,8 +112,8 @@ int NFC_PHY_LOWAPI_nand_raw_read(const MIO_NAND_INFO *info, loff_t ofs, size_t *
     unsigned int bytes_to_read = (unsigned int)*len;
     int curr_blockindex = -1;
 
-    byte_ofs  = ofs & (info->bytes_per_page - 1);  ofs = do_div(ofs, info->bytes_per_page);  //ofs /= info->bytes_per_page;
-    page_ofs  = ofs & (info->pages_per_block - 1); ofs = do_div(ofs, info->pages_per_block); //ofs /= info->pages_per_block;
+    byte_ofs  = ofs & (info->bytes_per_page - 1);  ofs = div_u64(ofs, info->bytes_per_page);  //ofs /= info->bytes_per_page;
+    page_ofs  = ofs & (info->pages_per_block - 1); ofs = div_u64(ofs, info->pages_per_block); //ofs /= info->pages_per_block;
     block_ofs = ofs;
 
     curr_blockindex = NFC_PHY_LOW_API_RAW_read(info, block_ofs, page_ofs, byte_ofs, bytes_to_read, buf);

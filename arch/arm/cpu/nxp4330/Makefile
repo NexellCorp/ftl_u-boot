@@ -39,7 +39,7 @@ START	:= $(addprefix $(obj),$(START))
 
 all:	$(obj).depend $(START) $(LIB)
 
-$(LIB):	$(OBJS)	LINKARCH $(LIBDEVICE) $(LIBCOMMON)
+$(LIB): $(OBJS) LINKARCH $(LIBDEVICE) $(LIBCOMMON) $(LIBMIO) $(LIBMIOFTL)
 	$(call cmd_link_o_target, $(OBJS))
 
 LNPREFIX=${SRCTREE}/arch/arm/include/asm
@@ -53,6 +53,11 @@ $(LIBCOMMON):
 $(LIBDEVICE):
 	$(MAKE) -C $(LIBDEVICE_PATH)
 
+$(LIBMIO):
+	$(MAKE) -C $(LIBMIO_PATH)
+
+$(LIBMIOFTL):
+	$(MAKE) -C $(LIBMIOFTL_PATH)
 #########################################################################
 
 # defines $(obj).depend target

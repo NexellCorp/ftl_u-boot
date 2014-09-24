@@ -46,7 +46,7 @@
 
 /* malloc() pool */
 #define	CONFIG_MEM_MALLOC_START			0x41000000
-#define CONFIG_MEM_MALLOC_LENGTH		32*1024*1024							/* more than 2M for ubifs: MAX 16M */
+#define CONFIG_MEM_MALLOC_LENGTH		64*1024*1024							/* more than 2M for ubifs: MAX 16M */
 
 /* when CONFIG_LCD */
 #define CONFIG_FB_ADDR					0x46000000
@@ -184,13 +184,26 @@
 /*-----------------------------------------------------------------------
  * NAND FLASH
  */
-//#define CONFIG_CMD_NAND
+#define CONFIG_CMD_NAND
+#define CONFIG_NAND_FTL
+//#define CONFIG_NAND_MTD
 //#define CONFIG_ENV_IS_IN_NAND
+
+#if defined(CONFIG_NAND_FTL) && defined(CONFIG_NAND_MTD)
+#error "Duplicated config for NAND Driver!!!"
+#endif
+
+#if defined(CONFIG_NAND_FTL)
+#define HAVE_BLOCK_DEVICE
+#endif
 
 #if defined(CONFIG_CMD_NAND)
 	#define CONFIG_SYS_MAX_NAND_DEVICE		(1)
 	#define CONFIG_SYS_NAND_MAX_CHIPS   	(1)
 	#define CONFIG_SYS_NAND_BASE		   	PHY_BASEADDR_CS_NAND							/* Nand data register, nand->IO_ADDR_R/_W */
+#endif
+
+#if defined(CONFIG_NAND_MTD)
 	#define CONFIG_SYS_NAND_ONFI_DETECTION
 	#define CONFIG_CMD_NAND_TRIMFFS
 
@@ -501,7 +514,7 @@
 /*-----------------------------------------------------------------------
  * FAT Partition
  */
-#if defined(CONFIG_MMC) || defined(CONFIG_CMD_USB)
+#if defined(CONFIG_MMC) || defined(CONFIG_CMD_USB) || defined(CONFIG_NAND_FTL)
 	#define CONFIG_DOS_PARTITION
 
 	#define CONFIG_CMD_FAT

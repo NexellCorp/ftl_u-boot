@@ -36,6 +36,7 @@ COBJS-$(CONFIG_FASTBOOT)		+= cmd_fastboot.o otg_bind_chk.o
 COBJS-$(CONFIG_CMD_MMC_UPDATE)	+= cmd_mmc_update.o
 COBJS-$(CONFIG_CMD_UPDATE_SDCARD)	+= cmd_update_sdcard.o
 COBJS-$(CONFIG_NXP4330_VIP)		+= camera.o
+COBJS-$(CONFIG_NAND_FTL)		+= cmd_mio.o cmd_nandparts.o
 
 COBJS   := $(COBJS-y)
 SOBJS   := $(SOBJS-y)

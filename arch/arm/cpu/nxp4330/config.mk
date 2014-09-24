@@ -40,6 +40,19 @@ PLATFORM_LIBS 	:= $(OBJTREE)/arch/arm/lib/eabi_compat.o \
 	$(filter-out %/arch/arm/lib/eabi_compat.o, $(PLATFORM_LIBS))
 
 # =========================================================================
+# Add mio library
+# =========================================================================
+LIBMIO_PATH		:= devices/mio
+LIBMIO			:= $(obj)libmio.o
+PLATFORM_LIBS	:= $(OBJTREE)/arch/arm/cpu/$(CPU)/$(LIBMIO_PATH)/$(LIBMIO) \
+	$(filter-out %/arch/arm/cpu/$(CPU)/$(LIBMIO_PATH)/$(LIBMIO), $(PLATFORM_LIBS))
+
+LIBMIOFTL_PATH	:= devices/mio/media
+LIBMIOFTL		:= $(obj)libmioftl.o
+PLATFORM_LIBS	:= $(OBJTREE)/arch/arm/cpu/$(CPU)/$(LIBMIOFTL_PATH)/$(LIBMIOFTL) \
+	$(filter-out %/arch/arm/cpu/$(CPU)/$(LIBMIOFTL_PATH)/$(LIBMIOFTL), $(PLATFORM_LIBS))
+
+# =========================================================================
 # Add cpu common library
 # =========================================================================
 LIBCOMMON_PATH 	:= common

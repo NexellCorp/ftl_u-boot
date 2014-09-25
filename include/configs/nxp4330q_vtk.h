@@ -46,7 +46,7 @@
 
 /* malloc() pool */
 #define	CONFIG_MEM_MALLOC_START			0x41000000
-#define CONFIG_MEM_MALLOC_LENGTH		8*1024*1024								/* more than 2M for ubifs: MAX 16M */
+#define CONFIG_MEM_MALLOC_LENGTH		64*1024*1024							/* more than 2M for ubifs: MAX 16M */
 
 /* when CONFIG_LCD */
 #define CONFIG_FB_ADDR					0x46000000
@@ -108,8 +108,8 @@
 #define CONFIG_ZERO_BOOTDELAY_CHECK
 #define CONFIG_ETHADDR					00:e1:1c:ba:e8:60
 #define CONFIG_NETMASK					255.255.255.0
-#define CONFIG_IPADDR					192.168.1.151
-#define CONFIG_SERVERIP					192.168.1.33
+#define CONFIG_IPADDR					192.168.1.219
+#define CONFIG_SERVERIP					192.168.1.216
 #define CONFIG_GATEWAYIP				192.168.1.254
 #define CONFIG_BOOTFILE					"uImage"		/* File to load	*/
 
@@ -208,13 +208,26 @@
 /*-----------------------------------------------------------------------
  * NAND FLASH
  */
-//#define CONFIG_CMD_NAND
+#define CONFIG_CMD_NAND
+#define CONFIG_NAND_FTL
+//#define CONFIG_NAND_MTD
 //#define CONFIG_ENV_IS_IN_NAND
+
+#if defined(CONFIG_NAND_FTL) && defined(CONFIG_NAND_MTD)
+#error "Duplicated config for NAND Driver!!!"
+#endif
+
+#if defined(CONFIG_NAND_FTL)
+#define HAVE_BLOCK_DEVICE
+#endif
 
 #if defined(CONFIG_CMD_NAND)
 	#define CONFIG_SYS_MAX_NAND_DEVICE		(1)
 	#define CONFIG_SYS_NAND_MAX_CHIPS   	(1)
 	#define CONFIG_SYS_NAND_BASE		   	PHY_BASEADDR_CS_NAND							/* Nand data register, nand->IO_ADDR_R/_W */
+#endif
+
+#if defined(CONFIG_NAND_MTD)
 	#define CONFIG_SYS_NAND_ONFI_DETECTION
 	#define CONFIG_CMD_NAND_TRIMFFS
 

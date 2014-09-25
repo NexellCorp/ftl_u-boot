@@ -284,11 +284,13 @@ LIBS-y += drivers/i2c/libi2c.o
 LIBS-y += drivers/input/libinput.o
 LIBS-y += drivers/misc/libmisc.o
 LIBS-y += drivers/mmc/libmmc.o
+ifdef CONFIG_NAND_MTD
 LIBS-y += drivers/mtd/libmtd.o
 LIBS-y += drivers/mtd/nand/libnand.o
 LIBS-y += drivers/mtd/onenand/libonenand.o
 LIBS-y += drivers/mtd/ubi/libubi.o
 LIBS-y += drivers/mtd/spi/libspi_flash.o
+endif
 LIBS-y += drivers/net/libnet.o
 LIBS-y += drivers/net/phy/libphy.o
 LIBS-y += drivers/pci/libpci.o

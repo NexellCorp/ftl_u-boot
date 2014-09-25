@@ -58,6 +58,7 @@ $(LIBMIO):
 
 $(LIBMIOFTL):
 	$(MAKE) -C $(LIBMIOFTL_PATH)
+
 #########################################################################
 
 # defines $(obj).depend target

@@ -201,6 +201,12 @@
 	#define CONFIG_SYS_MAX_NAND_DEVICE		(1)
 	#define CONFIG_SYS_NAND_MAX_CHIPS   	(1)
 	#define CONFIG_SYS_NAND_BASE		   	PHY_BASEADDR_CS_NAND							/* Nand data register, nand->IO_ADDR_R/_W */
+
+	#if defined(CONFIG_ENV_IS_IN_NAND)
+		#define	CONFIG_ENV_OFFSET			(0x400000)									/* 4MB */
+		#define CONFIG_ENV_SIZE           	(0x100000)									/* 1 block size */
+		#define CONFIG_ENV_RANGE			(0x400000)		 							/* avoid bad block */
+	#endif
 #endif
 
 #if defined(CONFIG_NAND_MTD)
@@ -220,11 +226,6 @@
 		#define	CONFIG_NAND_ECC_BCH
 	#endif
 
-	#if defined(CONFIG_ENV_IS_IN_NAND)
-		#define	CONFIG_ENV_OFFSET			(0x400000)									/* 4MB */
-		#define CONFIG_ENV_SIZE           	(0x100000)									/* 1 block size */
-		#define CONFIG_ENV_RANGE			(0x400000)		 							/* avoid bad block */
-	#endif
 
 	#undef  CONFIG_CMD_IMLS
 
@@ -478,7 +479,7 @@
 	#define	CONFIG_MMC0_NEXELL					/* 0 = MMC0 */
 	#define	CONFIG_MMC1_NEXELL					/* 1 = MMC1 */
 	#define	CONFIG_MMC2_NEXELL					/* 2 = MMC1 */
-	#define CONFIG_MMC0_ATTACH      	TRUE    /* 0 = MMC0 */
+	#define CONFIG_MMC0_ATTACH      	FALSE    /* 0 = MMC0 */
 	#define CONFIG_MMC1_ATTACH      	FALSE    /* 1 = MMC1 */
 	#define CONFIG_MMC2_ATTACH      	TRUE    /* 2 = MMC2 */
 	#define CONFIG_DWMMC

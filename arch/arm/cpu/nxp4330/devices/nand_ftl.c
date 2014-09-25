@@ -21,7 +21,7 @@
 #include <malloc.h>
 #include <part.h>
 #include <mio.uboot.h>
-#include "nand_ftl.h"
+#include <nand_ftl.h>
 #include "loglevel.h"
 
 static struct list_head nand_devices;

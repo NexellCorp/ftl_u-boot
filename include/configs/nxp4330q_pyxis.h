@@ -221,9 +221,9 @@
 	#endif
 
 	#if defined(CONFIG_ENV_IS_IN_NAND)
-		#define	CONFIG_ENV_OFFSET			(0x400000)									/* 4MB */
-		#define CONFIG_ENV_SIZE           	(0x100000)									/* 1 block size */
-		#define CONFIG_ENV_RANGE			(0x400000)		 							/* avoid bad block */
+		#define	CONFIG_ENV_OFFSET			(0x400000)										/* 4MB */
+		#define CONFIG_ENV_SIZE           	(4*1024*1024)									/* 1 block size */
+		#define CONFIG_ENV_RANGE			CONFIG_ENV_SIZE * 2 							/* avoid bad block */
 	#endif
 
 	#undef  CONFIG_CMD_IMLS

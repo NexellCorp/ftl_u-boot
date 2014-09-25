@@ -62,12 +62,14 @@
 #include <linux/wait.h>
 #include <linux/vmalloc.h>
 #include <linux/gfp.h>
+#include <linux/math64.h>
 
 #define DBG_PHY_LOWAPI(fmt, args...) printk(fmt, ##args)
 //#define DBG_PHY_LOWAPI(fmt, args...)
 
 #elif defined (__BUILD_MODE_ARM_UBOOT_DEVICE_DRIVER__)
 #include <div64.h>
+#include <linux/math64.h>
 #include <common.h>
 #include <malloc.h>
 
@@ -144,9 +146,9 @@ int NFC_PHY_LOWAPI_ofs_write(const MIO_NAND_INFO *info, loff_t ofs, size_t *len,
     unsigned int sectors= (*len) / 512;
     unsigned int curr_blockindex = 0;
 
-    byte_ofs   = ofs & (512 - 1);                        ofs = do_div(ofs, 512);                      //ofs /= 512;
-    sector_ofs = ofs & ((info->bytes_per_page/512) - 1); ofs = do_div(ofs, info->bytes_per_page/512); //ofs /= (info->bytes_per_page/512);
-    page_ofs   = ofs & (info->pages_per_block - 1);      ofs = do_div(ofs, info->pages_per_block);    //ofs /= info->pages_per_block;
+    byte_ofs   = ofs & (512 - 1);                        ofs = div_u64(ofs, 512);                      //ofs /= 512;
+    sector_ofs = ofs & ((info->bytes_per_page/512) - 1); ofs = div_u64(ofs, info->bytes_per_page/512); //ofs /= (info->bytes_per_page/512);
+    page_ofs   = ofs & (info->pages_per_block - 1);      ofs = div_u64(ofs, info->pages_per_block);    //ofs /= info->pages_per_block;
     block_ofs  = ofs;
 
     if (byte_ofs || sector_ofs || page_ofs || (*len & (512-1)) || (sectors & 1))
@@ -177,9 +179,9 @@ int NFC_PHY_LOWAPI_ofs_read(const MIO_NAND_INFO *info, loff_t ofs, size_t *len, 
     unsigned int copybytes = 0;
     int curr_blockindex = -1;
 
-    byte_ofs   = ofs & (512 - 1);                        ofs = do_div(ofs, 512);                      //ofs /= 512;
-    sector_ofs = ofs & ((info->bytes_per_page/512) - 1); ofs = do_div(ofs, info->bytes_per_page/512); //ofs /= (info->bytes_per_page/512);
-    page_ofs   = ofs & (info->pages_per_block - 1);      ofs = do_div(ofs, info->pages_per_block);    //ofs /= info->pages_per_block;
+    byte_ofs   = ofs & (512 - 1);                        ofs = div_u64(ofs, 512);                      //ofs /= 512;
+    sector_ofs = ofs & ((info->bytes_per_page/512) - 1); ofs = div_u64(ofs, info->bytes_per_page/512); //ofs /= (info->bytes_per_page/512);
+    page_ofs   = ofs & (info->pages_per_block - 1);      ofs = div_u64(ofs, info->pages_per_block);    //ofs /= info->pages_per_block;
     block_ofs = ofs;
 
     do
@@ -264,15 +266,15 @@ int NFC_PHY_LOWAPI_ofs_erase(const MIO_NAND_INFO *info, loff_t ofs, size_t size)
     unsigned int block_ofs=0, page_ofs=0, sector_ofs=0, byte_ofs=0;
     unsigned int end_block_ofs=0, block_cnt=0;
 
-    byte_ofs = ofs & (512 - 1);                          ofs = do_div(ofs, 512);                      //ofs /= 512;
-    sector_ofs = ofs & ((info->bytes_per_page/512) - 1); ofs = do_div(ofs, info->bytes_per_page/512); //ofs /= (info->bytes_per_page/512);
-    page_ofs = ofs & (info->pages_per_block - 1);        ofs = do_div(ofs, info->pages_per_block);    //ofs /= info->pages_per_block;
+    byte_ofs = ofs & (512 - 1);                          ofs = div_u64(ofs, 512);                      //ofs /= 512;
+    sector_ofs = ofs & ((info->bytes_per_page/512) - 1); ofs = div_u64(ofs, info->bytes_per_page/512); //ofs /= (info->bytes_per_page/512);
+    page_ofs = ofs & (info->pages_per_block - 1);        ofs = div_u64(ofs, info->pages_per_block);    //ofs /= info->pages_per_block;
     block_ofs = ofs;
 
     ofs = ofs_org + size - 1;
-    byte_ofs = ofs & (512 - 1);                          ofs = do_div(ofs, 512);                      //ofs /= 512;
-    sector_ofs = ofs & ((info->bytes_per_page/512) - 1); ofs = do_div(ofs, info->bytes_per_page/512); //ofs /= (info->bytes_per_page/512);
-    page_ofs = ofs & (info->pages_per_block - 1);        ofs = do_div(ofs, info->pages_per_block);    //ofs /= info->pages_per_block;
+    byte_ofs = ofs & (512 - 1);                          ofs = div_u64(ofs, 512);                      //ofs /= 512;
+    sector_ofs = ofs & ((info->bytes_per_page/512) - 1); ofs = div_u64(ofs, info->bytes_per_page/512); //ofs /= (info->bytes_per_page/512);
+    page_ofs = ofs & (info->pages_per_block - 1);        ofs = div_u64(ofs, info->pages_per_block);    //ofs /= info->pages_per_block;
     end_block_ofs = ofs;
 
     block_cnt = end_block_ofs - block_ofs + 1;

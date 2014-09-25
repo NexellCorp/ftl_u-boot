@@ -87,7 +87,7 @@ static int nand_drv_register(struct nand_ftl *nand)
 static int nand_startup(struct nand_ftl *nand)
 {
 	/* ftl start */
-	if (mio_init() == 1) {
+	if (mio_init() >= 0) {
 		nand->ftl_status = 1;
 		nx_info("mio_init success.\n");
 	}

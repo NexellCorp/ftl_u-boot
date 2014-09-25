@@ -460,7 +460,6 @@ int ftl_write_raw_chunk(char* data, unsigned int sector, unsigned int sector_siz
 	char run_cmd[64];
 
 	printf("write raw data in %d size %d (sector)\n", sector, sector_size);
-//	sprintf(run_cmd,"nand_ftl write 0x%x 0x%llx 0x%llx", (int)data, sector*512LL, sector_size*512LL);
 	sprintf(run_cmd,"mio write 0x%x 0x%x 0x%x", (int)data, sector, sector_size);
 	run_command(run_cmd, 0);
 
@@ -484,26 +483,30 @@ static int nand_part_write(struct fastboot_part *fpart, void *buf, uint64_t leng
 		return -1;
 
 	blk_size = desc->blksz;
-	printk("step:%d\n", __LINE__);
 
+	/*
+	 * lowlevel : linear : no ecc, no randomize, no read-retry
+	 *		2ndboot,3rdboot
+	 *          "mio nandrawwrite 0x50000000 0x0        0x20000"
+	 *
+	 * lowlevel : linear : ecc, randomize, read-retry
+	 *		raw data
+	 *			"mio nandwrite    0x50000000 0x400000   0x100000"
+	 *
+	 * ftl : block :
+	 *		ext4 image
+	 *			"mio write        0x50000000 0x20000000 0x20000000"
+	 */
 	if (fpart->fs_type == FASTBOOT_FS_2NDBOOT ||
 		fpart->fs_type == FASTBOOT_FS_BOOT) {
-		// TODO
-#if 0
+
 		char args[64];
-		int l = 0, p = 0;
+		int p = 0;
 
-		if (fpart->fs_type == FASTBOOT_FS_2NDBOOT)
-			p = sprintf(args, "update_nand %d 2ndboot", dev);
-		else
-			p = sprintf(args, "update_nand %d boot", dev);
-
-		l = sprintf(&args[p], " 0x%x 0x%llx 0x%llx", (unsigned int)buf, fpart->start, length);
-		p += l;
+		p = sprintf(args, "mio nandrawwrite 0x%x %llx %llx", (unsigned int)buf, fpart->start, length);
 		args[p] = 0;
 
-		return run_command(args, 0); /* update_nand [dev no] <type> 'mem' 'addr' 'length' [load addr] */
-#endif
+		return run_command(args, 0);
 	}
 
 	if (fpart->fs_type & FASTBOOT_FS_MASK) {
@@ -511,7 +514,6 @@ static int nand_part_write(struct fastboot_part *fpart, void *buf, uint64_t leng
 		ret = nand_check_part_table(desc, fpart);
 		if (0 > ret)
 			return -1;
-		printk("step:%d\n", __LINE__);
 
 		if (ret) {	/* new partition */
 			uint64_t parts[FASTBOOT_DEV_PART_MAX][2] = { {0,0}, };
@@ -528,12 +530,10 @@ static int nand_part_write(struct fastboot_part *fpart, void *buf, uint64_t leng
 				return -1;
 			}
 		}
-		printk("step:%d\n", __LINE__);
 
 		if (nand_check_part_table(desc, fpart))
 			return -1;
 	}
-	printk("step:%d\n", __LINE__);
 
 	/* change write raw chunk method : mmc -> nand */
 	set_write_raw_chunk_cb(ftl_write_raw_chunk);
@@ -543,7 +543,6 @@ static int nand_part_write(struct fastboot_part *fpart, void *buf, uint64_t leng
 		debug("write compressed ext4 ...\n");
 		return write_compressed_ext4((char*)buf, fpart->start/blk_size);
 	}
-	printk("step:%d\n", __LINE__);
 
 	blk = fpart->start/blk_size ;
 	cnt = (length/blk_size) + ((length & (blk_size-1)) ? 1 : 0);
@@ -563,17 +562,7 @@ static int nand_part_capacity(struct fastboot_device *fd, int devno, uint64_t *l
 
 	debug("** nand.%d capacity **\n", devno);
 
-	/* set nand device */
-#if 0
-	if (0 > get_device("nand", simple_itoa(devno), &desc)) {
-		sprintf(cmd, "mmc dev %d", devno);
-    	if (0 > run_command(cmd, 0))
-    		return -1;
-    	if (0 > run_command("mmc rescan", 0))
-    		return -1;
-	}
-#endif
-
+	/* get nand device */
 	if (0 > get_device("nand", simple_itoa(devno), &desc))
 		return -1;
 

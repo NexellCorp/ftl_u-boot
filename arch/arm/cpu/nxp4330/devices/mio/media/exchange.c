@@ -112,7 +112,6 @@ unsigned long long __div64(unsigned long long _n, unsigned long long _base)
 void EXCHANGE_init(void)
 {
 	if (nxp_ftl_start_block & (_BLOCK_ALIGN_-1)) {
-		#warning "FTL Start Offset Must Be Multiple Of 8MB"
 		nxp_ftl_start_block = ALIGN(nxp_ftl_start_block, _BLOCK_ALIGN_);
 	}
 

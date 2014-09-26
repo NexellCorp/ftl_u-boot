@@ -14,6 +14,7 @@
 #include <common.h>
 #include <command.h>
 
+#include <nand_ftl.h>
 #include <mio.uboot.h>
 
 int get_number(void)
@@ -146,7 +147,9 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
         {
             if (strncmp(argv[1], "init", 4) == 0)
             {
-                mio_init();
+				struct nand_ftl *nand;
+				nand = find_nand_device(0);
+				nand_startup(nand);			//mio_init();
                 return 0;
             }
             if (strncmp(argv[1], "info", 4) == 0)

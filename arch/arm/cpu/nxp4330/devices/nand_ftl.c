@@ -29,7 +29,6 @@ unsigned long nxp_ftl_start_block = 0;
 
 static int nand_register(struct nand_ftl *nand);
 static int nand_drv_register(struct nand_ftl *nand);
-static int nand_startup(struct nand_ftl *nand);
 
 struct nand_ftl *find_nand_device(int dev_num)
 {
@@ -84,7 +83,7 @@ static int nand_drv_register(struct nand_ftl *nand)
 	return 0;
 }
 
-static int nand_startup(struct nand_ftl *nand)
+int nand_startup(struct nand_ftl *nand)
 {
 	/* ftl start */
 	if (mio_init() >= 0) {

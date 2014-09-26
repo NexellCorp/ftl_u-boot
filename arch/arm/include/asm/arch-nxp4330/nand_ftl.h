@@ -81,5 +81,6 @@ unsigned long nand_berase(int dev, lbaint_t start, lbaint_t blkcnt);
 
 /* ftl */
 int nand_ftl_init(void);
+int nand_startup(struct nand_ftl *nand);
 
 #endif /* _NAND_FTL_H_ */

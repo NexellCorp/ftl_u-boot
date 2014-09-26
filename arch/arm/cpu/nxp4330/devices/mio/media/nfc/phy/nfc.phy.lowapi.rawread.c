@@ -268,16 +268,16 @@ int NFC_PHY_LOW_API_RAW_read(const MIO_NAND_RAW_INFO *info, unsigned int block_o
 
     NFC_PHY_LOW_API_RAW_ChipSelect(channel, phyway, 1);
     {
-    while (remain_bytes > 0)
-    {
-        if (curr_blockindex >= info->blocks_per_lun)
+        while (remain_bytes > 0)
         {
-            return -1;
-        }
-    
-        failed = 0;
-        row = (curr_blockindex * pages_per_block) + curr_pageindex;
-        col = curr_byte_ofs;
+            if (curr_blockindex >= info->blocks_per_lun)
+            {
+                return -1;
+            }
+
+            failed = 0;
+            row = (curr_blockindex * pages_per_block) + curr_pageindex;
+            col = curr_byte_ofs;
 
             /******************************************************************
              * 1st : set read
@@ -316,6 +316,7 @@ int NFC_PHY_LOW_API_RAW_read(const MIO_NAND_RAW_INFO *info, unsigned int block_o
                  * 2nd : read data
                  ******************************************************************/
                 *pNFCMD = 0x00;
+                NFC_PHY_LOW_API_RAW_tDelay(500);  // tWHR
                 data = curr_buff;
                 for (read_loop = 0; read_loop < curr_bytes; read_loop++)
                 {
@@ -323,24 +324,27 @@ int NFC_PHY_LOW_API_RAW_read(const MIO_NAND_RAW_INFO *info, unsigned int block_o
                 }
             }
     
-        if (failed)
-        {
-            curr_blockindex += 1;
-        }
-        else
-        {
-            curr_byte_ofs = 0;
-            curr_pageindex += 1;
-            if (curr_pageindex >= pages_per_block)
+            if (failed)
             {
                 curr_blockindex += 1;
-                curr_pageindex = 0;
             }
+            else
+            {
+                remain_bytes -= curr_bytes;
+                curr_buff += curr_bytes;
 
-            remain_bytes -= curr_bytes;
-            curr_buff += curr_bytes;
+                if (remain_bytes)
+                {
+                    curr_byte_ofs = 0;
+                    curr_pageindex += 1;
+                    if (curr_pageindex >= pages_per_block)
+                    {
+                        curr_blockindex += 1;
+                        curr_pageindex = 0;
+                    }
+                }
+            }
         }
-    }
     }
     NFC_PHY_LOW_API_RAW_ChipSelect(channel, phyway, 0);
     
@@ -433,15 +437,18 @@ int NFC_PHY_LOW_API_RAW_write(const MIO_NAND_RAW_INFO *info, unsigned int block_
             }
             else
             {
-                curr_pageindex += 1;
-                if (curr_pageindex >= info->pages_per_block)
-                {
-                    curr_blockindex += 1;
-                    curr_pageindex = 0;
-                }
-
                 remain_bytes -= curr_bytes;
                 curr_buff += curr_bytes;
+
+                if (remain_bytes)
+                {
+                    curr_pageindex += 1;
+                    if (curr_pageindex >= info->pages_per_block)
+                    {
+                        curr_blockindex += 1;
+                        curr_pageindex = 0;
+                    }
+                }
             }
         }
     }

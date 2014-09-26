@@ -108,87 +108,87 @@ int NFC_PHY_LOWAPI_init(void)
     NAND * nand_config = (NAND *)&phy_features.nand_config;
     unsigned int channels = 1, ways = 1; 
 
-	if (Exchange.ftl.fnIsBooted)
-	{
-		if (Exchange.ftl.fnIsBooted())
-		{
-        	low_api.nandinfo.channel = 0;
-        	low_api.nandinfo.phyway = 0;
-        	low_api.nandinfo.pages_per_block = nand_config->_f.pages_per_block;
-        	low_api.nandinfo.bytes_per_page = nand_config->_f.databytes_per_page;
-        	low_api.nandinfo.blocks_per_lun = nand_config->_f.mainblocks_per_lun;
-        	low_api.nandinfo.ecc_bits = nand_config->_f.number_of_bits_ecc_correctability;
-        	low_api.nandinfo.bytes_per_ecc = nand_config->_f.maindatabytes_per_eccunit;
-        	low_api.nandinfo.bytes_per_parity = (14 * low_api.nandinfo.ecc_bits + 7) / 8;
-        	low_api.nandinfo.bytes_per_parity = (low_api.nandinfo.bytes_per_parity + (4-1)) & ~(4-1);
-        	low_api.nandinfo.readretry_type = nand_config->_f.support_type.read_retry;
+    if (Exchange.ftl.fnIsBooted)
+    {
+        if (Exchange.ftl.fnIsBooted())
+        {
+            low_api.nandinfo.channel = 0;
+            low_api.nandinfo.phyway = 0;
+            low_api.nandinfo.pages_per_block = nand_config->_f.pages_per_block;
+            low_api.nandinfo.bytes_per_page = nand_config->_f.databytes_per_page;
+            low_api.nandinfo.blocks_per_lun = nand_config->_f.mainblocks_per_lun;
+            low_api.nandinfo.ecc_bits = nand_config->_f.number_of_bits_ecc_correctability;
+            low_api.nandinfo.bytes_per_ecc = nand_config->_f.maindatabytes_per_eccunit;
+            low_api.nandinfo.bytes_per_parity = (14 * low_api.nandinfo.ecc_bits + 7) / 8;
+            low_api.nandinfo.bytes_per_parity = (low_api.nandinfo.bytes_per_parity + (4-1)) & ~(4-1);
+            low_api.nandinfo.readretry_type = nand_config->_f.support_type.read_retry;
 
             low_api.is_init = 1;
 
             DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: OK (by FTL Boot)\n");
-			return 0;
-	    }
-	}
+            return 0;
+        }
+    }
 
     if (low_api.is_init)
     {
         return 0;
     }
 
-	ret = NFC_PHY_Init(1);
-	if (ret < 0)
-	{
-	    DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: error! Init:%d\n", ret);
-	    return -1;
-	}
+    ret = NFC_PHY_Init(1);
+    if (ret < 0)
+    {
+        DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: error! Init:%d\n", ret);
+        return -1;
+    }
 
-	ret = NFC_PHY_EccInfoInit(channels, ways, 0);
-	if (ret < 0)
-	{
-	    DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: error! EccInfo Init:%d\n", ret);
-	    return -1;
-	}
+    ret = NFC_PHY_EccInfoInit(channels, ways, 0);
+    if (ret < 0)
+    {
+        DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: error! EccInfo Init:%d\n", ret);
+        return -1;
+    }
     NFC_PHY_SetFeatures(channels, ways, (void *)nand_config);
 
     ret = 0;
     switch(nand_config->_f.support_type.read_retry)
     {
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
-    	{
-    		ret = NFC_PHY_HYNIX_READRETRY_Init(channels, ways, 0, nand_config->_f.support_type.read_retry);
-    		if (ret >= 0)
-    		{
-    			ret = NFC_PHY_HYNIX_READRETRY_MakeRegAll();
-    		}
-    	} break;
+        case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+        case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+        case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+        {
+            ret = NFC_PHY_HYNIX_READRETRY_Init(channels, ways, 0, nand_config->_f.support_type.read_retry);
+            if (ret >= 0)
+            {
+                ret = NFC_PHY_HYNIX_READRETRY_MakeRegAll();
+            }
+        } break;
     }
     if (ret < 0)
     {
-    	DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: error! HynixReadRetry!\n");
+        DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: error! HynixReadRetry!\n");
     }
 
     ret = NFC_PHY_RAND_Init(nand_config->_f.maindatabytes_per_eccunit);
     if (ret < 0)
     {
-    	DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: error! Randomize\n");
-    	return -1;
+        DBG_PHY_LOWAPI("NFC_PHY_LOWAPI_init: error! Randomize\n");
+        return -1;
     }
     NFC_PHY_RAND_Enable(1);
 
     if (ret >= 0)
     {
-    	low_api.nandinfo.channel = 0;
-    	low_api.nandinfo.phyway = 0;
-    	low_api.nandinfo.pages_per_block = nand_config->_f.pages_per_block;
-    	low_api.nandinfo.bytes_per_page = nand_config->_f.databytes_per_page;
-    	low_api.nandinfo.blocks_per_lun = nand_config->_f.mainblocks_per_lun;
-    	low_api.nandinfo.ecc_bits = nand_config->_f.number_of_bits_ecc_correctability;
-    	low_api.nandinfo.bytes_per_ecc = nand_config->_f.maindatabytes_per_eccunit;
-    	low_api.nandinfo.bytes_per_parity = (14 * low_api.nandinfo.ecc_bits + 7) / 8;
-    	low_api.nandinfo.bytes_per_parity = (low_api.nandinfo.bytes_per_parity + (4-1)) & ~(4-1);
-    	low_api.nandinfo.readretry_type = nand_config->_f.support_type.read_retry;
+        low_api.nandinfo.channel = 0;
+        low_api.nandinfo.phyway = 0;
+        low_api.nandinfo.pages_per_block = nand_config->_f.pages_per_block;
+        low_api.nandinfo.bytes_per_page = nand_config->_f.databytes_per_page;
+        low_api.nandinfo.blocks_per_lun = nand_config->_f.mainblocks_per_lun;
+        low_api.nandinfo.ecc_bits = nand_config->_f.number_of_bits_ecc_correctability;
+        low_api.nandinfo.bytes_per_ecc = nand_config->_f.maindatabytes_per_eccunit;
+        low_api.nandinfo.bytes_per_parity = (14 * low_api.nandinfo.ecc_bits + 7) / 8;
+        low_api.nandinfo.bytes_per_parity = (low_api.nandinfo.bytes_per_parity + (4-1)) & ~(4-1);
+        low_api.nandinfo.readretry_type = nand_config->_f.support_type.read_retry;
 
         low_api.is_init = 1;
 
@@ -200,14 +200,14 @@ int NFC_PHY_LOWAPI_init(void)
 
 void NFC_PHY_LOWAPI_deinit(void)
 {
-	if (Exchange.ftl.fnIsBooted)
-	{
-		if (Exchange.ftl.fnIsBooted())
-		{
-        	low_api.is_init = 0;
-			return;
-	    }
-	}
+    if (Exchange.ftl.fnIsBooted)
+    {
+        if (Exchange.ftl.fnIsBooted())
+        {
+            low_api.is_init = 0;
+            return;
+        }
+    }
 
     if (low_api.is_init)
     {
@@ -215,18 +215,18 @@ void NFC_PHY_LOWAPI_deinit(void)
 
         switch(low_api.nandinfo.readretry_type)
         {
-        	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-        	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
-        	case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+            case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+            case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+            case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
             {
                 NFC_PHY_HYNIX_READRETRY_DeInit();
             } break;
         }
 
-    	NFC_PHY_DeInit();
-    	NFC_PHY_EccInfoDeInit();
+        NFC_PHY_DeInit();
+        NFC_PHY_EccInfoDeInit();
 
-    	low_api.is_init = 0;
+        low_api.is_init = 0;
     }
 }
 
@@ -253,37 +253,6 @@ int NFC_PHY_LOWAPI_nand_erase(loff_t ofs, size_t size)
 {
     return NFC_PHY_LOWAPI_ofs_erase(ofs, size);
 }
-
-#if 0
-// these functions are defined in 'nfc.phy.lowapi.rawread.c' file for small code size.
-// but, you can also use this function, too.
-
-int NFC_PHY_LOWAPI_nand_raw_write(const MIO_NAND_RAW_INFO *info, loff_t ofs, size_t *len, u_char *buf)
-{
-    unsigned char enable_ecc = 0;
-
-    low_api.nandinfo.channel = info->channel;
-    low_api.nandinfo.phyway = info->phyway;
-    low_api.nandinfo.pages_per_block = info->pages_per_block;
-    low_api.nandinfo.bytes_per_page = info->bytes_per_page;
-    low_api.nandinfo.blocks_per_lun = info->blocks_per_lun;
-
-    return NFC_PHY_LOWAPI_ofs_write(ofs, len, buf, enable_ecc);
-}
-
-int NFC_PHY_LOWAPI_nand_raw_read(const MIO_NAND_RAW_INFO *info, loff_t ofs, size_t *len, u_char *buf)
-{
-    unsigned char enable_ecc = 0;
-
-    low_api.nandinfo.channel = info->channel;
-    low_api.nandinfo.phyway = info->phyway;
-    low_api.nandinfo.pages_per_block = info->pages_per_block;
-    low_api.nandinfo.bytes_per_page = info->bytes_per_page;
-    low_api.nandinfo.blocks_per_lun = info->blocks_per_lun;
-
-    return NFC_PHY_LOWAPI_ofs_read(ofs, len, buf, enable_ecc);
-}
-#endif
 
 /******************************************************************************
  * local functions
@@ -346,6 +315,8 @@ int NFC_PHY_LOWAPI_ofs_read(loff_t ofs, size_t *len, u_char *buf, unsigned char 
                 break;
             }
 
+            block_ofs += (curr_blockindex - block_ofs);
+
             memcpy(destbuf, low_api.temp_buf+byte_ofs, copybytes);
 
             destbuf += copybytes;
@@ -361,7 +332,6 @@ int NFC_PHY_LOWAPI_ofs_read(loff_t ofs, size_t *len, u_char *buf, unsigned char 
                     page_ofs = 0;
                 }
             }
-            block_ofs += (curr_blockindex - block_ofs);
         }
 
         // for sector aligned data
@@ -373,6 +343,8 @@ int NFC_PHY_LOWAPI_ofs_read(loff_t ofs, size_t *len, u_char *buf, unsigned char 
             {
                 break;
             }
+
+            block_ofs += (curr_blockindex - block_ofs);
 
             destbuf += sectors * 512;
             remain_bytes -= sectors * 512;
@@ -388,7 +360,6 @@ int NFC_PHY_LOWAPI_ofs_read(loff_t ofs, size_t *len, u_char *buf, unsigned char 
                     page_ofs &= (info->pages_per_block - 1);
                 }
             }
-            block_ofs += (curr_blockindex - block_ofs);
         }
 
         // for last not sector aligned data
@@ -512,15 +483,18 @@ int NFC_PHY_LOWAPI_write(unsigned int block_ofs, unsigned int sectors, void *buf
         }
         else
         {
-            curr_pageindex += 1;
-            if (curr_pageindex >= info->pages_per_block)
-            {
-                curr_blockindex += 1;
-                curr_pageindex = 0;
-            }
-
             remain_sectors -= curr_sectors;
             curr_buff += info->bytes_per_page;
+
+            if (remain_sectors)
+            {
+                curr_pageindex += 1;
+                if (curr_pageindex >= info->pages_per_block)
+                {
+                    curr_blockindex += 1;
+                    curr_pageindex = 0;
+                }
+            }
         }
     }
 
@@ -689,16 +663,19 @@ int NFC_PHY_LOWAPI_read(unsigned int block_ofs, unsigned int page_ofs, unsigned 
         }
         else
         {
-            curr_sec_ofs = 0;
-            curr_pageindex += 1;
-            if (curr_pageindex >= info->pages_per_block)
-            {
-                curr_blockindex += 1;
-                curr_pageindex = 0;
-            }
-
             remain_sectors -= curr_sectors;
             curr_buff += (curr_sectors << 9);
+
+            if (remain_sectors)
+            {
+                curr_sec_ofs = 0;
+                curr_pageindex += 1;
+                if (curr_pageindex >= info->pages_per_block)
+                {
+                    curr_blockindex += 1;
+                    curr_pageindex = 0;
+                }
+            }
         }
     }
 

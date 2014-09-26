@@ -416,6 +416,7 @@ void NFC_PHY_HYNIX_READRETRY_ReadData(unsigned int _channel, unsigned int _phywa
         NFC_PHY_tDelay(NfcTime.tWHR);
         while (!NFC_PHY_StatusIsRDY(NFC_PHY_RData()));
         NFC_PHY_Cmd(NF_CMD_READ_1ST);
+        NFC_PHY_tDelay(NfcTime.tWHR);
 
         for (i=0; i < readloop; i++)
         {
@@ -531,10 +532,10 @@ int NFC_PHY_HYNIX_READRETRY_MakeRegData(NAND_HYNIX_READRETRY_REG_DATA *_reg_data
     	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
     	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
 		{
-          //reg_data->total_readretry_cnt = otp_buf[0];
-          //reg_data->readretry_reg_cnt = otp_buf[1];
-            reg_data->total_readretry_cnt = 8;
-            reg_data->readretry_reg_cnt = 8;
+            reg_data->total_readretry_cnt = otp_buf[0];
+            reg_data->readretry_reg_cnt = otp_buf[1];
+          //reg_data->total_readretry_cnt = 8;
+          //reg_data->readretry_reg_cnt = 8;
           
             entry_srtart_ofs = 2;
 		} break;

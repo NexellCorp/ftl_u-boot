@@ -583,18 +583,6 @@ void NFC_PHY_EccCorrection(char         * _error_at,
     }
     else
     {
-        {
-            unsigned int i = 0;
-
-            for (i = 0; i < bytes_per_ecc; i++)
-            {
-                if (0xFF != read_buffer[i])
-                {
-                    __print("[%04d]=%02x\n", i, read_buffer[i]);
-                }
-            }
-        }
-
         memset((void *)read_buffer, 0xff, bytes_per_ecc);
     }
 }
@@ -1965,6 +1953,7 @@ int NFC_PHY_2ndReadDataNoEcc(unsigned int _channel,
     {
         // Send Read Command : Because Previous Status Read Command Issued
         NFC_PHY_Cmd(NF_CMD_READ_1ST);
+        NFC_PHY_tDelay(NfcTime.tWHR);
 
         // Read Data
         if (__NULL != data_buffer)

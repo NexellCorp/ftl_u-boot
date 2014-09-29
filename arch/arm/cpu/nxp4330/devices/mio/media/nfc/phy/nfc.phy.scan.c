@@ -1408,7 +1408,7 @@ unsigned int NFC_PHY_ScanFeature(unsigned int _scan_format)
 
     NAND * nand_config = (NAND *)&phy_features.nand_config;
 
-    NFC_PHY_ReadId(0, 0, id, onfi_id);
+    NFC_PHY_ReadId(0, 0, (char *)id, (char *)onfi_id);
 
     /**************************************************************************
      * Make Loose Nand Configurations

@@ -25,10 +25,10 @@
 #include "loglevel.h"
 
 static struct list_head nand_devices;
+unsigned long nxp_ftl_start_block = 0;
 
 static int nand_register(struct nand_ftl *nand);
 static int nand_drv_register(struct nand_ftl *nand);
-static int nand_startup(struct nand_ftl *nand);
 
 struct nand_ftl *find_nand_device(int dev_num)
 {
@@ -53,7 +53,7 @@ block_dev_desc_t *nand_get_dev(int dev)
 	if (!nand)
 		return NULL;
 
-	nand->block_dev.lba = nand->capacity;
+	nand_drv_register(nand);
 	printf("========================================\n");
 	printf("lba: 0x%lx\n", nand->block_dev.lba);
 
@@ -65,7 +65,6 @@ static int nand_drv_register(struct nand_ftl *nand)
 	nand->block_dev.blksz = 512;
 	nand->block_dev.log2blksz = LOG2(nand->block_dev.blksz);
 	//nand->block_dev.lba = lldiv(nand->capacity, nand->block_dev.blksz);
-	nand->block_dev.lba = 0;
 	nand->block_dev.vendor[0] = 0;
 	nand->block_dev.product[0] = 0;
 	nand->block_dev.revision[0] = 0;
@@ -84,10 +83,10 @@ static int nand_drv_register(struct nand_ftl *nand)
 	return 0;
 }
 
-static int nand_startup(struct nand_ftl *nand)
+int nand_startup(struct nand_ftl *nand)
 {
 	/* ftl start */
-	if (mio_init() == 1) {
+	if (mio_init() >= 0) {
 		nand->ftl_status = 1;
 		nx_info("mio_init success.\n");
 	}
@@ -128,6 +127,9 @@ unsigned long nand_berase(int dev, lbaint_t start, lbaint_t blkcnt)
 
 static int nand_register(struct nand_ftl *nand)
 {
+	/* FTL start block - Physical Block Aligned. */
+	nxp_ftl_start_block = CFG_NAND_FTL_START_BLOCK;
+
 	/* fill in device description */
 	nand->block_dev.if_type = IF_TYPE_NAND;
 	nand->block_dev.dev = 0;

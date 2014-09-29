@@ -25,6 +25,8 @@
 #include <malloc.h>
 
 #include "media/nfc/phy/nfc.phy.lowapi.h"
+#include "media/nfc/phy/nfc.phy.h"
+#include "media/nfc/phy/nfc.phy.readretry.h"
 #include <nand_ftl.h>
 
 #if 1
@@ -56,6 +58,9 @@
         U8 *pucRData;
 
 } gstRW;
+
+static int mio_init_rwtest_buffer(void);
+static void mio_deinit_rwtest_buffer(void);
 #endif
 
 /*******************************************************************************
@@ -128,7 +133,7 @@ int mio_format(int _format_type)
   //Exchange.debug.nfc.phy.info_ecc = 1;
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
-    Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
+  //Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
     Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
 
     /**************************************************************************
@@ -155,7 +160,7 @@ int mio_format(int _format_type)
         return -1;
     }
 #endif
-    return 1;
+    return 0;
 }
 
 int mio_init(void)
@@ -207,7 +212,7 @@ int mio_init(void)
   //Exchange.debug.nfc.phy.info_ecc = 1;
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
-    Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
+  //Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
     Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
 
     /**************************************************************************
@@ -244,46 +249,21 @@ int mio_init(void)
 
     is_mio_init = 1;
 
+    NFC_PHY_LOWAPI_init();
+
 	/* change ftl status */
 	nx_nand = find_nand_device(0);
 	if (nx_nand)
 		nx_nand->ftl_status = 0;
 
-
+#if defined (MEDIA_READ_WRITE_TEST)
     /**************************************************************************
      * Memory Allocations : Read/Write Test
      **************************************************************************/
-#if defined (MEDIA_READ_WRITE_TEST)
-    {
-        U32 i = 0;
-
-        gstRW.uiDataSize = 10 * 1024 * 1024;
-
-        gstRW.pucWData = (U8 *)malloc(gstRW.uiDataSize);
-        gstRW.pucRData = (U8 *)malloc(gstRW.uiDataSize);
-
-        if (!gstRW.pucWData || !gstRW.pucRData)
-        {
-            DBG_MEDIA("RW data buffer alloc failed!\n");
-
-            if (gstRW.pucWData)
-                free(gstRW.pucWData);
-
-            if (gstRW.pucRData)
-                free(gstRW.pucRData);
-        }
-
-        for (i = 0; i < gstRW.uiDataSize / 4; i++)
-        {
-            ((U32 *)gstRW.pucWData)[i] = i;
-        }
-
-        printf("WriteBuff: 0x%0X, ReadBuff: 0x%0X\n", (U32)gstRW.pucWData, (U32)gstRW.pucRData);
-    }
+     mio_init_rwtest_buffer();
 #endif
-
 #endif
-    return 1;
+    return 0;
 }
 
 /*******************************************************************************
@@ -301,46 +281,85 @@ int mio_deinit(void)
 
         is_mio_init = 0;
 
+        NFC_PHY_LOWAPI_deinit();
+
 		/* change ftl status */
 		nx_nand = find_nand_device(0);
 		if (nx_nand)
 			nx_nand->ftl_status = 0;
 
+#if defined (MEDIA_READ_WRITE_TEST)
+        mio_deinit_rwtest_buffer();
+#endif
+    }
+#endif
+
+    return 0;
+}
 
 #if defined (MEDIA_READ_WRITE_TEST)
+/*******************************************************************************
+ *
+ *******************************************************************************/
+int mio_init_rwtest_buffer(void)
+{
+    if (!gstRW.uiDataSize)
+    {
+        U32 i = 0;
+
+        gstRW.uiDataSize = 10 * 1024 * 1024;
+
+        gstRW.pucWData = (U8 *)malloc(gstRW.uiDataSize);
+        gstRW.pucRData = (U8 *)malloc(gstRW.uiDataSize);
+
+        if (!gstRW.pucWData || !gstRW.pucRData)
+        {
+            DBG_MEDIA("RW data buffer alloc failed!\n");
+
+            if (gstRW.pucWData)
+                free(gstRW.pucWData);
+
+            if (gstRW.pucRData)
+                free(gstRW.pucRData);
+
+            return -1;
+        }
+
+        for (i = 0; i < gstRW.uiDataSize / 4; i++)
+        {
+            ((U32 *)gstRW.pucWData)[i] = i;
+        }
+
+        printf("WriteBuff: 0x%0X, ReadBuff: 0x%0X\n", (U32)gstRW.pucWData, (U32)gstRW.pucRData);
+    }
+
+    return 0;
+}
+
+/*******************************************************************************
+ *
+ *******************************************************************************/
+void mio_deinit_rwtest_buffer(void)
+{
+    if (gstRW.uiDataSize)
+    {
         if (gstRW.pucWData)
             free(gstRW.pucWData);
 
         if (gstRW.pucRData)
             free(gstRW.pucRData);
-#endif
-    }
-#endif
 
-    return 1;
+        gstRW.uiDataSize = 0;
+    }
 }
+#endif
 
 /*******************************************************************************
  *
  *******************************************************************************/
 int mio_info(void)
 {
-    int resp = 0;
-    NAND nand;
-
-    if (!is_mio_init)
-    {
-        DBG_MEDIA("mio_info(): mio is not initialized!!\n");
-        return 0;
-    }
-
-    resp = Exchange.ftl.fnGetNandInfo(&nand);
-
-    if (resp < 0)
-    {
-        DBG_MEDIA("mio_info(): failed to get NAND information.\n");
-        return 0;
-    }
+    NAND * nand = (NAND *)&phy_features.nand_config;
 
     printf("\n NAND INFORMATION");
 
@@ -348,80 +367,80 @@ int mio_info(void)
     printf("*******************************************************************************\n");
     printf("* NAND Configuration Summary\n");
     printf("*\n");
-    printf("* - Manufacturer : %s\n", nand._f.manufacturer);
-    printf("* - Model Name : %s\n", nand._f.modelname);
-    printf("* - Generation : %s\n", nand._f.generation);
+    printf("* - Manufacturer : %s\n", nand->_f.manufacturer);
+    printf("* - Model Name : %s\n", nand->_f.modelname);
+    printf("* - Generation : %s\n", nand->_f.generation);
 
     printf("*\n");
-    printf("* - Interfacetype : %d\n", nand._f.interfacetype);
-    printf("* - ONFI Detected : %d\n", nand._f.onfi_detected);
-    printf("* - ONFI Timing Mode : %d\n", nand._f.onfi_timing_mode);
+    printf("* - Interfacetype : %d\n", nand->_f.interfacetype);
+    printf("* - ONFI Detected : %d\n", nand->_f.onfi_detected);
+    printf("* - ONFI Timing Mode : %d\n", nand->_f.onfi_timing_mode);
 
     printf("*\n");
-    printf("* - tClk : %d\n", nand._f.timing.async.tClk);
-    printf("* - tRWC : %d\n", nand._f.timing.async.tRWC);
-    printf("* - tR : %d\n", nand._f.timing.async.tR);
-    printf("* - tWB : %d\n", nand._f.timing.async.tWB);
-    printf("* - tCCS : %d\n", nand._f.timing.async.tCCS);
-    printf("* - tADL : %d\n", nand._f.timing.async.tADL);
-    printf("* - tRHW : %d\n", nand._f.timing.async.tRHW);
-    printf("* - tWHR : %d\n", nand._f.timing.async.tWHR);
-    printf("* - tWW : %d\n", nand._f.timing.async.tWW);
+    printf("* - tClk : %d\n", nand->_f.timing.async.tClk);
+    printf("* - tRWC : %d\n", nand->_f.timing.async.tRWC);
+    printf("* - tR : %d\n", nand->_f.timing.async.tR);
+    printf("* - tWB : %d\n", nand->_f.timing.async.tWB);
+    printf("* - tCCS : %d\n", nand->_f.timing.async.tCCS);
+    printf("* - tADL : %d\n", nand->_f.timing.async.tADL);
+    printf("* - tRHW : %d\n", nand->_f.timing.async.tRHW);
+    printf("* - tWHR : %d\n", nand->_f.timing.async.tWHR);
+    printf("* - tWW : %d\n", nand->_f.timing.async.tWW);
 
     printf("*\n");
-    printf("* - tCS : %d\n", nand._f.timing.async.tCS);
-    printf("* - tCH : %d\n", nand._f.timing.async.tCH);
-    printf("* - tCLS : %d\n", nand._f.timing.async.tCLS);
-    printf("* - tALS : %d\n", nand._f.timing.async.tALS);
-    printf("* - tCLH : %d\n", nand._f.timing.async.tCLH);
-    printf("* - tALH : %d\n", nand._f.timing.async.tALH);
-    printf("* - tWP : %d\n", nand._f.timing.async.tWP);
-    printf("* - tWH : %d\n", nand._f.timing.async.tWH);
-    printf("* - tWC : %d\n", nand._f.timing.async.tWC);
-    printf("* - tDS : %d\n", nand._f.timing.async.tDS);
-    printf("* - tDH : %d\n", nand._f.timing.async.tDH);
-    printf("* - tCEA : %d\n", nand._f.timing.async.tCEA);
-    printf("* - tREA : %d\n", nand._f.timing.async.tREA);
-    printf("* - tRP : %d\n", nand._f.timing.async.tRP);
-    printf("* - tREH : %d\n", nand._f.timing.async.tREH);
-    printf("* - tRC : %d\n", nand._f.timing.async.tRC);
-    printf("* - tCOH : %d\n", nand._f.timing.async.tCOH);
+    printf("* - tCS : %d\n", nand->_f.timing.async.tCS);
+    printf("* - tCH : %d\n", nand->_f.timing.async.tCH);
+    printf("* - tCLS : %d\n", nand->_f.timing.async.tCLS);
+    printf("* - tALS : %d\n", nand->_f.timing.async.tALS);
+    printf("* - tCLH : %d\n", nand->_f.timing.async.tCLH);
+    printf("* - tALH : %d\n", nand->_f.timing.async.tALH);
+    printf("* - tWP : %d\n", nand->_f.timing.async.tWP);
+    printf("* - tWH : %d\n", nand->_f.timing.async.tWH);
+    printf("* - tWC : %d\n", nand->_f.timing.async.tWC);
+    printf("* - tDS : %d\n", nand->_f.timing.async.tDS);
+    printf("* - tDH : %d\n", nand->_f.timing.async.tDH);
+    printf("* - tCEA : %d\n", nand->_f.timing.async.tCEA);
+    printf("* - tREA : %d\n", nand->_f.timing.async.tREA);
+    printf("* - tRP : %d\n", nand->_f.timing.async.tRP);
+    printf("* - tREH : %d\n", nand->_f.timing.async.tREH);
+    printf("* - tRC : %d\n", nand->_f.timing.async.tRC);
+    printf("* - tCOH : %d\n", nand->_f.timing.async.tCOH);
 
     printf("*\n");
-    printf("* - Luns Per Ce : %d\n", nand._f.luns_per_ce);
-    printf("* - Databytes Per Page : %d\n", nand._f.databytes_per_page);
-    printf("* - Sparebytes Per Page : %d\n", nand._f.sparebytes_per_page);
-    printf("* - Number Of Planes : %d\n", nand._f.number_of_planes);
-    printf("* - Pages Per Block : %d\n", nand._f.pages_per_block);
-    printf("* - Mainblocks Per Lun : %d\n", nand._f.mainblocks_per_lun);
-    printf("* - Extendedblocks Per Lun : %d\n", nand._f.extendedblocks_per_lun);
-    printf("* - Next Lun Address : %d\n", nand._f.next_lun_address);
-    printf("* - Over Provisioning : %d\n", nand._f.over_provisioning);
-    printf("* - Bits Per Cell : %d\n", nand._f.bits_per_cell);
-    printf("* - Number Of Bits Ecc Correctability : %d\n", nand._f.number_of_bits_ecc_correctability);
-    printf("* - Maindatabytes Per Eccunit : %d\n", nand._f.maindatabytes_per_eccunit);
-    printf("* - Eccbits Per Maindata : %d\n", nand._f.eccbits_per_maindata);
-    printf("* - Eccbits Per Blockinformation : %d\n", nand._f.eccbits_per_blockinformation);
-    printf("* - Block Endurance : %d\n", nand._f.block_endurance);
-    printf("* - Factorybadblocks Per Nand : %d\n", nand._f.factorybadblocks_per_nand);
+    printf("* - Luns Per Ce : %d\n", nand->_f.luns_per_ce);
+    printf("* - Databytes Per Page : %d\n", nand->_f.databytes_per_page);
+    printf("* - Sparebytes Per Page : %d\n", nand->_f.sparebytes_per_page);
+    printf("* - Number Of Planes : %d\n", nand->_f.number_of_planes);
+    printf("* - Pages Per Block : %d\n", nand->_f.pages_per_block);
+    printf("* - Mainblocks Per Lun : %d\n", nand->_f.mainblocks_per_lun);
+    printf("* - Extendedblocks Per Lun : %d\n", nand->_f.extendedblocks_per_lun);
+    printf("* - Next Lun Address : %d\n", nand->_f.next_lun_address);
+    printf("* - Over Provisioning : %d\n", nand->_f.over_provisioning);
+    printf("* - Bits Per Cell : %d\n", nand->_f.bits_per_cell);
+    printf("* - Number Of Bits Ecc Correctability : %d\n", nand->_f.number_of_bits_ecc_correctability);
+    printf("* - Maindatabytes Per Eccunit : %d\n", nand->_f.maindatabytes_per_eccunit);
+    printf("* - Eccbits Per Maindata : %d\n", nand->_f.eccbits_per_maindata);
+    printf("* - Eccbits Per Blockinformation : %d\n", nand->_f.eccbits_per_blockinformation);
+    printf("* - Block Endurance : %d\n", nand->_f.block_endurance);
+    printf("* - Factorybadblocks Per Nand : %d\n", nand->_f.factorybadblocks_per_nand);
 
     printf("*\n");
-    printf("* - Multiplane Read %d\n", nand._f.support_type.multiplane_read);
-    printf("* - Multiplane Write %d\n", nand._f.support_type.multiplane_write);
-    printf("* - Cache Read %d\n", nand._f.support_type.cache_read);
-    printf("* - Cache Write %d\n", nand._f.support_type.cache_write);
-    printf("* - Interleave %d\n", nand._f.support_type.interleave);
-    printf("* - Paired Page Mapping %d\n", nand._f.support_type.paired_page_mapping);
-    printf("* - Block Indicator %d\n", nand._f.support_type.block_indicator);
-    printf("* - Paired Plane %d\n", nand._f.support_type.paired_plane);
-    printf("* - Multiplane Erase %d\n", nand._f.support_type.multiplane_erase);
-    printf("* - Read Retry %d\n", nand._f.support_type.read_retry);
+    printf("* - Multiplane Read %d\n", nand->_f.support_type.multiplane_read);
+    printf("* - Multiplane Write %d\n", nand->_f.support_type.multiplane_write);
+    printf("* - Cache Read %d\n", nand->_f.support_type.cache_read);
+    printf("* - Cache Write %d\n", nand->_f.support_type.cache_write);
+    printf("* - Interleave %d\n", nand->_f.support_type.interleave);
+    printf("* - Paired Page Mapping %d\n", nand->_f.support_type.paired_page_mapping);
+    printf("* - Block Indicator %d\n", nand->_f.support_type.block_indicator);
+    printf("* - Paired Plane %d\n", nand->_f.support_type.paired_plane);
+    printf("* - Multiplane Erase %d\n", nand->_f.support_type.multiplane_erase);
+    printf("* - Read Retry %d\n", nand->_f.support_type.read_retry);
     printf("*\n");
 
     printf("*******************************************************************************\n");
     printf("\n");
 
-    return 1;
+    return 0;
 }
 
 
@@ -692,191 +711,74 @@ int mio_powerdown(void)
 /*******************************************************************************
  * low level api.
  *******************************************************************************/
+int mio_init_without_ftl(void)
+{
+    int ret = 0;
+
+    ret = NFC_PHY_LOWAPI_init();
+
+#if defined (MEDIA_READ_WRITE_TEST)
+    /**************************************************************************
+     * Memory Allocations : Read/Write Test
+     **************************************************************************/
+     mio_init_rwtest_buffer();
+#endif
+
+    return ret;
+}
+
+int mio_deinit_without_ftl(void)
+{
+    NFC_PHY_LOWAPI_deinit();
+
+#if defined (MEDIA_READ_WRITE_TEST)
+    mio_deinit_rwtest_buffer();
+#endif
+
+	return 0;
+}
+
 int mio_nand_write(loff_t ofs, size_t *len, u_char *buf)
 {
     int ret = 0;
-    NAND nand;
-    MIO_NAND_INFO info;
 
-    if (!is_mio_init)
+    if (!NFC_PHY_LOWAPI_is_init())
     {
-        DBG_MEDIA("mio_nand_write(): mio is not initialized!!\n");
+        DBG_MEDIA("mio_nand_write(): error! NFC_PHY_LOWAPI is not initialized!\n");
         return 0;
     }
 
-    Exchange.ftl.fnGetNandInfo(&nand);
-
-	info.channel = 0;
-	info.phyway = 0;
-	info.pages_per_block = nand._f.pages_per_block;
-	info.bytes_per_page = nand._f.databytes_per_page;
-	info.blocks_per_lun = nand._f.mainblocks_per_lun;
-
-	info.ecc_bits = nand._f.number_of_bits_ecc_correctability;
-	info.bytes_per_ecc = nand._f.maindatabytes_per_eccunit;
-	info.bytes_per_parity = (14 * info.ecc_bits + 7) / 8;
-	info.bytes_per_parity = (info.bytes_per_parity + (4-1)) & ~(4-1); // 4Byte Align
-
-	info.readretry_type = nand._f.support_type.read_retry;
-
-    ret = NFC_PHY_LOWAPI_nand_write(&info, ofs, len, buf);
+    ret = NFC_PHY_LOWAPI_nand_write(ofs, len, buf);
 
     return ret;
 }
 
-
-#if 0
 int mio_nand_read(loff_t ofs, size_t *len, u_char *buf)
 {
     int ret = 0;
-    NAND nand;
-    MIO_NAND_INFO info;
-    unsigned int channels = 1, ways = 1; 
 
-    // H27UCG8T2ATR
-	info.channel = 0;
-	info.phyway = 0;
-	info.pages_per_block = 256;
-	info.bytes_per_page = 8192;
-	info.blocks_per_lun = 4096;
-
-	info.ecc_bits = 40;
-	info.bytes_per_ecc = 1024;
-	info.bytes_per_parity = (14 * info.ecc_bits + 7) / 8;
-	info.bytes_per_parity = (info.bytes_per_parity + (4-1)) & ~(4-1); // 4Byte Align
-
-	info.readretry_type = 10;
-
-	NFC_PHY_Init();
-	NFC_PHY_EccInfoInit(1, 1, 0);
-	// based on ONFI timing mode 0
-    NFC_PHY_SetFeatures(channels, // _max_channel,
-                        ways, // _max_way,
-                        NAND_INTERFACE_ONFI_ASYNC, // _interface_type,
-                        0, // _onfi_timing_mode,
-                        10*1000*1000, // _tClk,  // Hz
-                        200, // _tWB,
-                        400, // _tCCS,
-                        400, // _tADL,
-                        200, // _tRHW,
-                        120, // _tWHR,
-                        100, // _tWW,
-                        70,  // _tCS,
-                        20,  // _tCH,
-                        50,  // _tCLS,
-                        50,  // _tALS,  // == _tCLS
-                        20,  // _tCLH,
-                        20,  // _tALH,  // == _tCLH
-                        50,  // _tWP,
-                        30,  // _tWH,
-                        100, // _tWC,
-                        40,  // _tDS,
-                        20,  // _tDH,
-                        100, // _tCEA,
-                        40,  // _tREA,
-                        50,  // _tRP,
-                        30,  // _tREH,
-                        100, // _tRC,
-                        0);  // _tCOH)
-
-    ret = 0;
-    switch(info.readretry_type)
+    if (!NFC_PHY_LOWAPI_is_init())
     {
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
-    	{
-    		ret = NFC_PHY_HYNIX_READRETRY_Init(channels, ways, 0, info.readretry_type);
-    		if (ret >= 0)
-    		{
-    			ret = NFC_PHY_HYNIX_READRETRY_MakeRegAll();
-    		}
-    	} break;
-    }
-    if (ret < 0)
-    {
-    	printf("HynixReadRetry : Error!\n");
-    }
-
-    NFC_PHY_RAND_Init(info.bytes_per_ecc);
-    NFC_PHY_RAND_Enable(1);
-
-
-    ret = NFC_PHY_LOWAPI_nand_read(&info, ofs, len, buf);
-
-
-    NFC_PHY_RAND_DeInit();
-    
-    switch(info.readretry_type)
-    {
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
-        {
-            NFC_PHY_HYNIX_READRETRY_DeInit();
-        } break;
-    }
-
-	NFC_PHY_DeInit();
-	NFC_PHY_EccInfoDeInit();
-
-    return ret;
-}
-#else
-int mio_nand_read(loff_t ofs, size_t *len, u_char *buf)
-{
-    int ret = 0;
-    NAND nand;
-    MIO_NAND_INFO info;
-
-    if (!is_mio_init)
-    {
-        DBG_MEDIA("mio_nand_read(): mio is not initialized!!\n");
+        DBG_MEDIA("mio_nand_read(): error! NFC_PHY_LOWAPI is not initialized!\n");
         return 0;
     }
 
-    Exchange.ftl.fnGetNandInfo(&nand);
-
-	info.channel = 0;
-	info.phyway = 0;
-	info.pages_per_block = nand._f.pages_per_block;
-	info.bytes_per_page = nand._f.databytes_per_page;
-	info.blocks_per_lun = nand._f.mainblocks_per_lun;
-
-	info.ecc_bits = nand._f.number_of_bits_ecc_correctability;
-	info.bytes_per_ecc = nand._f.maindatabytes_per_eccunit;
-	info.bytes_per_parity = (14 * info.ecc_bits + 7) / 8;
-	info.bytes_per_parity = (info.bytes_per_parity + (4-1)) & ~(4-1); // 4Byte Align
-
-	info.readretry_type = nand._f.support_type.read_retry;
-
-    ret = NFC_PHY_LOWAPI_nand_read(&info, ofs, len, buf);
+    ret = NFC_PHY_LOWAPI_nand_read(ofs, len, buf);
 
     return ret;
 }
-#endif
 
 int mio_nand_erase(loff_t ofs, size_t size)
 {
     int ret = 0;
-    NAND nand;
-    MIO_NAND_INFO info;
 
-    if (!is_mio_init)
+    if (!NFC_PHY_LOWAPI_is_init())
     {
-        DBG_MEDIA("mio_nand_erase(): mio is not initialized!!\n");
+        DBG_MEDIA("mio_nand_erase(): error! NFC_PHY_LOWAPI is not initialized!\n");
         return 0;
     }
 
-    Exchange.ftl.fnGetNandInfo(&nand);
-
-	info.channel = 0;
-	info.phyway = 0;
-	info.pages_per_block = nand._f.pages_per_block;
-	info.bytes_per_page = nand._f.databytes_per_page;
-	info.blocks_per_lun = nand._f.mainblocks_per_lun;
-
-    ret = NFC_PHY_LOWAPI_nand_erase(&info, ofs, size);
+    ret = NFC_PHY_LOWAPI_nand_erase(ofs, size);
 
     return ret;
 }
@@ -884,23 +786,18 @@ int mio_nand_erase(loff_t ofs, size_t size)
 int mio_nand_raw_write(loff_t ofs, size_t *len, u_char *buf)
 {
     int ret = 0;
-    NAND nand;
-    MIO_NAND_INFO info;
-
-    if (!is_mio_init)
-    {
-        DBG_MEDIA("mio_nand_raw_write(): mio is not initialized!!\n");
-        return 0;
-    }
-
-    Exchange.ftl.fnGetNandInfo(&nand);
+    MIO_NAND_RAW_INFO info;
 
 	info.channel = 0;
 	info.phyway = 0;
-	info.pages_per_block = nand._f.pages_per_block;
-	info.bytes_per_page = nand._f.databytes_per_page;
-	info.blocks_per_lun = nand._f.mainblocks_per_lun;
+	info.pages_per_block = 256;
+	info.bytes_per_page = 8192;
+	info.blocks_per_lun = 4096;
 
+    /*******************************************************************************
+     * NFC_PHY_LOWAPI_nand_raw_write() function has no prerequisite including 
+     * the NFC_PHY_LOWAPI_init() function.
+     *******************************************************************************/
     ret = NFC_PHY_LOWAPI_nand_raw_write(&info, ofs, len, buf);
 
     return ret;
@@ -909,32 +806,18 @@ int mio_nand_raw_write(loff_t ofs, size_t *len, u_char *buf)
 int mio_nand_raw_read(loff_t ofs, size_t *len, u_char *buf)
 {
     int ret = 0;
-    MIO_NAND_INFO info;
+    MIO_NAND_RAW_INFO info;
 
-#if 1
 	info.channel = 0;
 	info.phyway = 0;
 	info.pages_per_block = 256;
 	info.bytes_per_page = 8192;
 	info.blocks_per_lun = 4096;
-#else
-    NAND nand;
 
-    if (!is_mio_init)
-    {
-        DBG_MEDIA("mio_nand_raw_read(): mio is not initialized!!\n");
-        return 0;
-    }
-
-    Exchange.ftl.fnGetNandInfo(&nand);
-
-	info.channel = 0;
-	info.phyway = 0;
-	info.pages_per_block = nand._f.pages_per_block;
-	info.bytes_per_page = nand._f.databytes_per_page;
-	info.blocks_per_lun = nand._f.mainblocks_per_lun;
-#endif
-
+    /*******************************************************************************
+     * NFC_PHY_LOWAPI_nand_raw_read() function has no prerequisite including 
+     * the NFC_PHY_LOWAPI_init() function.
+     *******************************************************************************/
     ret = NFC_PHY_LOWAPI_nand_raw_read(&info, ofs, len, buf);
 
     return ret;

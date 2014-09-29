@@ -14,6 +14,7 @@
 #include <common.h>
 #include <command.h>
 
+#include <nand_ftl.h>
 #include <mio.uboot.h>
 
 int get_number(void)
@@ -146,7 +147,9 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
         {
             if (strncmp(argv[1], "init", 4) == 0)
             {
-                mio_init();
+				struct nand_ftl *nand;
+				nand = find_nand_device(0);
+				nand_startup(nand);			//mio_init();
                 return 0;
             }
             if (strncmp(argv[1], "info", 4) == 0)
@@ -164,6 +167,15 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
         case 3:
         {
+            if (strncmp(argv[1], "init", 4) == 0)
+            {
+                if (strncmp(argv[2], "noftl", 5) == 0)
+                {
+                    mio_init_without_ftl();
+                }
+                return 0;
+            }
+
             return CMD_RET_USAGE;
 
         } break;
@@ -175,6 +187,7 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                 ulong ofs = simple_strtoul(argv[2], NULL, 16);
                 size_t size = simple_strtoul(argv[3], NULL, 16);
                 ulong n = 0;
+
                 printf("MIO nanderase:ofs %lu size %d ...", ofs, size);
                 n = mio_nand_erase(ofs, size);
                 printf("last block: %ld\n", n);
@@ -295,6 +308,7 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD(mio, 9, 0, do_mio,
            "MIO sub system",
            "init - init MIO sub system\n"
+           "mio init noftl - init MIO sub system without FTL\n"
            "mio format - FTL format \n"
            "mio info - show available FTL\n"
            "mio rwtest testsectors capacity(sectors) write_ratio sequent_ratio\n"

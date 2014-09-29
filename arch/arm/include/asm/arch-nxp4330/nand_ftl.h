@@ -30,7 +30,7 @@
  *
  *       F T L
  *
- * ===========================     <-- ftl_block_start
+ * ===========================     <-- nxp_ftl_start_block
  *       linear:normal
  * ===========================     <-- linear_block_start
  *       linear:raw
@@ -58,7 +58,7 @@ struct nand_ftl {
 
 
 	/* ftl block info. */
-	uint32_t ftl_block_start;
+	uint32_t nxp_ftl_start_block;
 	/* linear block info. */
 	uint32_t linear_block_start;
 
@@ -81,5 +81,6 @@ unsigned long nand_berase(int dev, lbaint_t start, lbaint_t blkcnt);
 
 /* ftl */
 int nand_ftl_init(void);
+int nand_startup(struct nand_ftl *nand);
 
 #endif /* _NAND_FTL_H_ */

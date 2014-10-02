@@ -119,12 +119,14 @@ int mio_format(int _format_type)
      * MIO Debug Options
      **************************************************************************/
     Exchange.debug.ftl.format = 1;
-  //Exchange.debug.ftl.format_progress = 1;
+    Exchange.debug.ftl.format_progress = 1;
     Exchange.debug.ftl.configurations = 1;
     Exchange.debug.ftl.open = 1;
     Exchange.debug.ftl.memory_usage = 1;
     Exchange.debug.ftl.boot = 1;
     Exchange.debug.ftl.error = 1;
+  //Exchange.debug.ftl.boot_read_retry = 1;
+  //Exchange.debug.ftl.read_retry = 1;
 
   //Exchange.debug.nfc.sche.operation = 1;
 
@@ -133,7 +135,7 @@ int mio_format(int _format_type)
   //Exchange.debug.nfc.phy.info_ecc = 1;
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
-  //Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
+    Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
     Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
 
     /**************************************************************************
@@ -212,7 +214,7 @@ int mio_init(void)
   //Exchange.debug.nfc.phy.info_ecc = 1;
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
-  //Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
+    Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
     Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
 
     /**************************************************************************
@@ -630,7 +632,6 @@ ulong mio_write(ulong blknr, lbaint_t blkcnt, const void *pvBuffer)
             if (siStartExtIndex >= 0)
             {
               //DBG_MEDIA("mio_cmd_to_ftl(WRITE): 0x%0X, 0x%0X\n", stFtl.uiPartialAddr, stFtl.uiPartialSectors);
-            
                 if (uiAddress == stFtl.uiPartialAddr)
                 {
                     // set external index
@@ -673,7 +674,7 @@ ulong mio_write(ulong blknr, lbaint_t blkcnt, const void *pvBuffer)
         }
     }
     
-    mio_cmd_to_ftl(IO_CMD_FLUSH, 0, 0, 0);
+    mio_standby();
 
     return (stFtl.uiPartialAddr - uiAddress);
 }
@@ -884,25 +885,10 @@ static S32 mio_cmd_to_ftl(U16 usCommand, U8 ucFeature, U32 uiAddress, U32 uiLeng
     // wait for done
     if ((siResp >= 0) && ucIsWaitForDone)
     {
-        unsigned int (*fnIsDone)(void);
-
-        switch (usCommand)
-        {
-            case IO_CMD_READ_DIRECT:         { fnIsDone = Exchange.ftl.fnIsIdle; }          break;
-            case IO_CMD_WRITE_DIRECT:        { fnIsDone = Exchange.ftl.fnIsIdle; }          break;
-            case IO_CMD_DATA_SET_MANAGEMENT: { fnIsDone = Exchange.ftl.fnIsTrimDone; }      break;
-            case IO_CMD_FLUSH:               { fnIsDone = Exchange.ftl.fnIsFlushDone; }     break;
-            case IO_CMD_STANDBY:             { fnIsDone = Exchange.ftl.fnIsStandbyDone; }   break;
-    		case IO_CMD_SWITCH_PARTITION:    { fnIsDone = Exchange.ftl.fnIsIdle; }          break;
-            case IO_CMD_POWER_DOWN:          { fnIsDone = Exchange.ftl.fnIsPowerDonwDone; } break;
-            default:                         { fnIsDone = Exchange.ftl.fnIsIdle; }          break; 
-        }
-
-        do 
+        while(!Exchange.ftl.fnIsIdle())
         {
             Exchange.ftl.fnMain();
-            
-        } while(fnIsDone());
+        }
     }
 
     return siExtIndex;

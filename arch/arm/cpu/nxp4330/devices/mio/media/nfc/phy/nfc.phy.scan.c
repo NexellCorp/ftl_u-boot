@@ -1419,7 +1419,7 @@ unsigned int NFC_PHY_ScanFeature(unsigned int _scan_format)
     nand_config->_f.onfi_detected = 0;
     nand_config->_f.onfi_timing_mode = 0;
 
-    nand_config->_f.timing.async.tClk  = __MHZ(10); // Hzz
+    nand_config->_f.timing.async.tClk  = __MHZ(10); // Hz
     nand_config->_f.timing.async.tRWC  = 100;       // ns
     nand_config->_f.timing.async.tR    = 200000;    // ns
     nand_config->_f.timing.async.tWB   = 200;       // ns

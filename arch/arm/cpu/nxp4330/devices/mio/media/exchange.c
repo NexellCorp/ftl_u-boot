@@ -117,7 +117,6 @@ void EXCHANGE_init(void)
 
     // FTL Start Offset Must Be Multiple Of 8MB
     Exchange.ewsftl_start_offset  = nxp_ftl_start_block;
-	printf("nxp_ftl_start_block : 0x%x\n", nxp_ftl_start_block);
     Exchange.ewsftl_start_page    = 0;
     Exchange.ewsftl_start_block   = 0;
 
@@ -192,6 +191,8 @@ void EXCHANGE_init(void)
     Exchange.std.__get_crc32 = EXCHANGE_GetCRC32;
 
 #endif
+
+    Exchange.std.__print("FTL Start Address: 0x%x\n", nxp_ftl_start_block);
 }
 
 /******************************************************************************

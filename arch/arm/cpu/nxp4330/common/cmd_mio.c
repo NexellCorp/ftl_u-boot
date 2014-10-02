@@ -23,7 +23,7 @@ int get_number(void)
 
     char c = 0;
     char p[16];
-    char c_place = 0;
+    unsigned char c_place = 0;
 
     memset((void *)p, 0, 16);
 
@@ -184,11 +184,11 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
         {
             if (strcmp(argv[1], "nanderase") == 0)
             {
-                ulong ofs = simple_strtoul(argv[2], NULL, 16);
-                size_t size = simple_strtoul(argv[3], NULL, 16);
+                loff_t ofs = (loff_t)simple_strtoull(argv[2], NULL, 16);
+                size_t size = (size_t)simple_strtoul(argv[3], NULL, 16);
                 ulong n = 0;
 
-                printf("MIO nanderase:ofs %lu size %d ...", ofs, size);
+                printf("MIO nanderase:ofs %llu size %u ...", ofs, size);
                 n = mio_nand_erase(ofs, size);
                 printf("last block: %ld\n", n);
                 return 0;
@@ -226,10 +226,10 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
             else if (strcmp(argv[1], "nandread") == 0)
             {
                 ulong addr = simple_strtoul(argv[2], NULL, 16);
-                ulong ofs = simple_strtoul(argv[3], NULL, 16);
-                size_t len = simple_strtoul(argv[4], NULL, 16);
+                loff_t ofs = (loff_t)simple_strtoull(argv[3], NULL, 16);
+                size_t len = (size_t)simple_strtoul(argv[4], NULL, 16);
                 ulong n = 0;
-                printf("MIO nandread: ofs %lu len %d addr %lX ...", ofs, len, addr);
+                printf("MIO nandread: ofs %llu len %u addr %lX ...", ofs, len, addr);
                 n = mio_nand_read(ofs, &len, (u_char *)addr);
                 printf("last block: %ld\n", n);
                 return 0;
@@ -237,10 +237,10 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
             else if (strcmp(argv[1], "nandwrite") == 0)
             {
                 ulong addr = simple_strtoul(argv[2], NULL, 16);
-                ulong ofs = simple_strtoul(argv[3], NULL, 16);
-                size_t len = simple_strtoul(argv[4], NULL, 16);
+                loff_t ofs = (loff_t)simple_strtoull(argv[3], NULL, 16);
+                size_t len = (size_t)simple_strtoul(argv[4], NULL, 16);
                 ulong n = 0;
-                printf("MIO nandwrite: ofs %lu len %d addr %lX ...", ofs, len, addr);
+                printf("MIO nandwrite: ofs %llu len %u addr %lX ...", ofs, len, addr);
                 n = mio_nand_write(ofs, &len, (u_char *)addr);
                 printf("last block: %ld\n", n);
                 return 0;
@@ -248,10 +248,10 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
             else if (strcmp(argv[1], "nandrawread") == 0)
             {
                 ulong addr = simple_strtoul(argv[2], NULL, 16);
-                ulong ofs = simple_strtoul(argv[3], NULL, 16);
-                size_t len = simple_strtoul(argv[4], NULL, 16);
+                loff_t ofs = (loff_t)simple_strtoull(argv[3], NULL, 16);
+                size_t len = (size_t)simple_strtoul(argv[4], NULL, 16);
                 ulong n = 0;
-                printf("MIO nandrawread: ofs %lu len %d addr %lX ...", ofs, len, addr);
+                printf("MIO nandrawread: ofs %llu len %u addr %lX ...", ofs, len, addr);
                 n = mio_nand_raw_read(ofs, &len, (u_char *)addr);
                 printf("last block: %ld\n", n);
                 return 0;
@@ -259,10 +259,10 @@ static int do_mio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
             else if (strcmp(argv[1], "nandrawwrite") == 0)
             {
                 ulong addr = simple_strtoul(argv[2], NULL, 16);
-                ulong ofs = simple_strtoul(argv[3], NULL, 16);
-                size_t len = simple_strtoul(argv[4], NULL, 16);
+                loff_t ofs = (loff_t)simple_strtoull(argv[3], NULL, 16);
+                size_t len = (size_t)simple_strtoul(argv[4], NULL, 16);
                 ulong n = 0;
-                printf("MIO nandrawwrite: ofs %lu len %d addr %lX ...", ofs, len, addr);
+                printf("MIO nandrawwrite: ofs %llu len %u addr %lX ...", ofs, len, addr);
                 n = mio_nand_raw_write(ofs, &len, (u_char *)addr);
                 printf("last block: %ld\n", n);
                 return 0;

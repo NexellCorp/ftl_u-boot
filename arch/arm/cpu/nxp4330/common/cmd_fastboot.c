@@ -32,9 +32,7 @@
 #include <decompress_ext4.h>
 #include "../../../../../drivers/usb/gadget/usbd-otg-hs.h"
 
-/*
 #define	debug	printf
-*/
 
 #ifndef FASTBOOT_PARTS_DEFAULT
 #error "Not default FASTBOOT_PARTS_DEFAULT"

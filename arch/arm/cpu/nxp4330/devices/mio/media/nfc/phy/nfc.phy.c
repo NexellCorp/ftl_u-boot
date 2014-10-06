@@ -832,6 +832,7 @@ unsigned int NFC_PHY_Init(unsigned int _scan_format)
     NFC_PHY_ChipSelect(0, 0, __FALSE);
     NFC_PHY_ChipSelect(0, 1, __FALSE);
 
+    Exchange.nfc.fnGetFeatures = NFC_PHY_GetFeatures;
     Exchange.nfc.fnSetFeatures = NFC_PHY_SetFeatures;
     Exchange.nfc.fnDelay = NFC_PHY_tDelay;
     Exchange.nfc.fnReadId = NFC_PHY_ReadId;
@@ -1174,7 +1175,7 @@ void NFC_PHY_GetFeatures(unsigned int * _max_channel, unsigned int * _max_way, v
 {
     *_max_channel = phy_features.max_channel;
     *_max_way = phy_features.max_way;
-    _nand_config = (void *)&phy_features.nand_config;
+    memcpy((void *)_nand_config, (const void *)&phy_features.nand_config, sizeof(NAND));
 }
 
 // When BCLK Changes, Must Be Reference.
@@ -3449,7 +3450,7 @@ int NFC_PHY_1stWriteData(unsigned int _channel,
         __print("Write.Data.? : bytes_per_data_ecc(%d), bytes_per_data_parity(%d), data_ecc_bits(%d)\n", bytes_per_data_ecc, bytes_per_data_parity, data_ecc_bits);
         __print("Write.Data.0 : block(%04d), page(%04d) => row(%08d), column(%04d) .", _block, _page, _row0, _column);
 
-        if ((int)_row1 >= 0)
+        if (0xFFFFFFFF != _row1)
         {
             _column = _col;
             _page   = __NROOT(_row1&0x000000FF,0);

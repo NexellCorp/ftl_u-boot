@@ -66,12 +66,6 @@
 #define __DBG_BLK
 #define __DBG_BLK_REQ
 //#define __DBG_MEDIA
-#define __DBG_NFC_PHY
-#define __DBG_NFC_PHY_FEATURE
-#define __DBG_NFC_PHY_ECC
-#define __DBG_NFC_PHY_ECC_CORRECTION
-#define __DBG_NFC_PHY_ECC_CORRECTED
-//#define __DBG_NFC_PHY_ECC_UNCORRECTABLE
 
 #ifndef __PRINTK_DBG
 #define PRINTK_DBG(fmt, args...) __PRINT(fmt, ##args)
@@ -95,40 +89,4 @@
 #define DBG_MEDIA(fmt, args...) __PRINT(fmt, ##args)
 #else
 #define DBG_MEDIA(fmt, args...)
-#endif
-
-#ifndef __DBG_NFC_PHY
-#define DBG_NFC_PHY(fmt, args...) __PRINT(fmt, ##args)
-#else
-#define DBG_NFC_PHY(fmt, args...)
-#endif
-
-#ifndef __DBG_NFC_PHY_FEATURE
-#define DBG_NFC_PHY_FEATURE(fmt, args...) __PRINT(fmt, ##args)
-#else
-#define DBG_NFC_PHY_FEATURE(fmt, args...)
-#endif
-
-#ifndef __DBG_NFC_PHY_ECC
-#define DBG_NFC_PHY_ECC(fmt, args...) __PRINT(fmt, ##args)
-#else
-#define DBG_NFC_PHY_ECC(fmt, args...)
-#endif
-
-#ifndef __DBG_NFC_PHY_ECC_CORRECTION
-#define DBG_NFC_PHY_ECC_CORRECTION(fmt, args...) __PRINT(fmt, ##args)
-#else
-#define DBG_NFC_PHY_ECC_CORRECTION(fmt, args...)
-#endif
-
-#ifndef __DBG_NFC_PHY_ECC_CORRECTED
-#define DBG_NFC_PHY_ECC_CORRECTED(fmt, args...) __PRINT(fmt, ##args)
-#else
-#define DBG_NFC_PHY_ECC_CORRECTED(fmt, args...)
-#endif
-
-#ifndef __DBG_NFC_PHY_ECC_UNCORRECTABLE
-#define DBG_NFC_PHY_ECC_UNCORRECTABLE(fmt, args...) __PRINT(fmt, ##args)
-#else
-#define DBG_NFC_PHY_ECC_UNCORRECTABLE(fmt, args...)
 #endif

@@ -32,9 +32,7 @@
 #include <decompress_ext4.h>
 #include "../../../../../drivers/usb/gadget/usbd-otg-hs.h"
 
-/*
 #define	debug	printf
-*/
 
 #ifndef FASTBOOT_PARTS_DEFAULT
 #error "Not default FASTBOOT_PARTS_DEFAULT"
@@ -466,6 +464,7 @@ int ftl_write_raw_chunk(char* data, unsigned int sector, unsigned int sector_siz
 	return 0;
 }
 
+/* nand ftl */
 static int nand_part_write(struct fastboot_part *fpart, void *buf, uint64_t length)
 {
 	block_dev_desc_t *desc;
@@ -503,8 +502,19 @@ static int nand_part_write(struct fastboot_part *fpart, void *buf, uint64_t leng
 		char args[64];
 		int p = 0;
 
+		/* erase */
+		p = sprintf(args, "mio nanderase %llx %llx", fpart->start, length);
+		args[p] = 0;
+
+		debug("%s\n", args);
+		run_command(args, 0);
+
+
+		/* write */
 		p = sprintf(args, "mio nandrawwrite 0x%x %llx %llx", (unsigned int)buf, fpart->start, length);
 		args[p] = 0;
+
+		debug("%s\n", args);
 
 		return run_command(args, 0);
 	}

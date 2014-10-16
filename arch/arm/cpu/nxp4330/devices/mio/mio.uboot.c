@@ -427,6 +427,9 @@ int mio_info(void)
     printf("* - Factorybadblocks Per Nand : %d\n", nand->_f.factorybadblocks_per_nand);
 
     printf("*\n");
+    printf("* - Randomize : %d\n", nand->_f.support_list.randomize);
+
+    printf("*\n");
     printf("* - Multiplane Read %d\n", nand->_f.support_type.multiplane_read);
     printf("* - Multiplane Write %d\n", nand->_f.support_type.multiplane_write);
     printf("* - Cache Read %d\n", nand->_f.support_type.cache_read);

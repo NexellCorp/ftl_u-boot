@@ -73,8 +73,8 @@
 /******************************************************************************
  *
  ******************************************************************************/
-#define DBG_PHY_READRETRY(fmt, args...) __PRINT(fmt, ##args)
-//#define DBG_PHY_READRETRY(fmt, args...)
+//#define DBG_PHY_READRETRY(fmt, args...) __PRINT(fmt, ##args)
+#define DBG_PHY_READRETRY(fmt, args...)
 
 /******************************************************************************
  * local
@@ -99,6 +99,13 @@ int NFC_PHY_HYNIX_READRETRY_Init(unsigned int _max_channels, unsigned int _max_w
     unsigned int way=0, channel=0;
     unsigned int size=0;
     unsigned int i=0;
+
+    Exchange.nfc.fnReadRetry_MakeRegAll = NFC_PHY_HYNIX_READRETRY_MakeRegAll;
+    Exchange.nfc.fnReadRetry_SetParameter = NFC_PHY_HYNIX_READRETRY_SetParameter;
+    Exchange.nfc.fnReadRetry_GetTotalReadRetryCount = NFC_PHY_HYNIX_READRETRY_GetTotalReadRetryCount;
+    Exchange.nfc.fnReadRetry_GetAddress = NFC_PHY_HYNIX_READRETRY_GetAddress;
+    Exchange.nfc.fnReadRetry_GetRegDataAddress = NFC_PHY_HYNIX_READRETRY_GetRegDataAddress;
+    Exchange.nfc.fnReadRetry_PrintTable = NFC_PHY_HYNIX_READRETRY_PrintTable;
 
     NFC_PHY_HYNIX_READRETRY_DeInit();
 
@@ -304,7 +311,7 @@ void NFC_PHY_HYNIX_READRETRY_OpenOtp(unsigned int _channel, unsigned int _phyway
     {
         switch(readretry_type)
         {
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
 		{
             NFC_PHY_Cmd(0x36);              // CMD : 0x36
             NFC_PHY_Addr(0xFF);             // ADDR: 0xFF
@@ -315,7 +322,7 @@ void NFC_PHY_HYNIX_READRETRY_OpenOtp(unsigned int _channel, unsigned int _phyway
             NFC_PHY_WData(0x4D);            // DATA: 0x4D
 		} break;
 
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
 		{
             NFC_PHY_Cmd(0x36);              // CMD : 0x36
             NFC_PHY_Addr(0xAE);             // ADDR: 0xAE
@@ -326,7 +333,7 @@ void NFC_PHY_HYNIX_READRETRY_OpenOtp(unsigned int _channel, unsigned int _phyway
             NFC_PHY_WData(0x4D);            // DATA: 0x4D
 		} break;
 
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+    	case NAND_READRETRY_TYPE_HYNIX_1xNM_MLC:
     	{
             NFC_PHY_Cmd(0x36);              // CMD : 0x36
             NFC_PHY_Addr(0x38);             // ADDR: 0xAE
@@ -356,13 +363,13 @@ void NFC_PHY_HYNIX_READRETRY_CloseOtp(unsigned int _channel, unsigned int _phywa
     {
         switch(readretry_type)
         {
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
 		{
             NFC_PHY_Cmd(0x38);              // CMD:  0x38
 		} break;
 
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+    	case NAND_READRETRY_TYPE_HYNIX_1xNM_MLC:
     	{
             NFC_PHY_Cmd(0x36);              // CMD:  0x36
             NFC_PHY_Addr(0x38);             // ADDR: 0x38
@@ -397,11 +404,11 @@ void NFC_PHY_HYNIX_READRETRY_ReadData(unsigned int _channel, unsigned int _phywa
 
     switch(readretry_type)
     {
-	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
         readloop = 1026;
         break;
-	case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+	case NAND_READRETRY_TYPE_HYNIX_1xNM_MLC:
         readloop = 528;
         break;
     default:
@@ -471,7 +478,7 @@ void NFC_PHY_HYNIX_READRETRY_MakeRegAddr(NAND_HYNIX_READRETRY_REG_ADDRESS *_reg_
     reg_addr->size_of_this = sizeof(*reg_addr);
     switch (readretry_type)
     {
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
     	{
 		    reg_addr->addr[reg_idx++] = 0xCC;
 		    reg_addr->addr[reg_idx++] = 0xBF;
@@ -483,7 +490,7 @@ void NFC_PHY_HYNIX_READRETRY_MakeRegAddr(NAND_HYNIX_READRETRY_REG_ADDRESS *_reg_
 		    reg_addr->addr[reg_idx++] = 0xAF;
     	} break;
 
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
 		{
 		    reg_addr->addr[reg_idx++] = 0xB0;
 		    reg_addr->addr[reg_idx++] = 0xB1;
@@ -497,7 +504,7 @@ void NFC_PHY_HYNIX_READRETRY_MakeRegAddr(NAND_HYNIX_READRETRY_REG_ADDRESS *_reg_
 		    reg_addr->addr[reg_idx++] = 0xD5;
 		} break;
 
-	    case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+	    case NAND_READRETRY_TYPE_HYNIX_1xNM_MLC:
 	    {
 		    reg_addr->addr[reg_idx++] = 0x38;
 		    reg_addr->addr[reg_idx++] = 0x39;
@@ -520,17 +527,17 @@ int NFC_PHY_HYNIX_READRETRY_MakeRegData(NAND_HYNIX_READRETRY_REG_DATA *_reg_data
 
 	switch (readretry_type)
 	{
-		case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:  { reg_idx =  8; } break;
-		case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE: { reg_idx = 10; } break;
-		case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:        { reg_idx =  4; } break;
+		case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:  { reg_idx =  8; } break;
+		case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE: { reg_idx = 10; } break;
+		case NAND_READRETRY_TYPE_HYNIX_1xNM_MLC:        { reg_idx =  4; } break;
 	}
     memset((void *)reg_data, 0x00, sizeof(*reg_data));
     reg_data->size_of_this = sizeof(*reg_data);
 
     switch (readretry_type)
     {
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
 		{
             reg_data->total_readretry_cnt = otp_buf[0];
             reg_data->readretry_reg_cnt = otp_buf[1];
@@ -540,7 +547,7 @@ int NFC_PHY_HYNIX_READRETRY_MakeRegData(NAND_HYNIX_READRETRY_REG_DATA *_reg_data
             entry_srtart_ofs = 2;
 		} break;
 
-	    case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+	    case NAND_READRETRY_TYPE_HYNIX_1xNM_MLC:
 	    {
 	        // Make the header of RRT
             NFC_PHY_HYNIX_READRETRY_MajorityVote(majority_buf, otp_buf, 1, 8);
@@ -566,8 +573,8 @@ int NFC_PHY_HYNIX_READRETRY_MakeRegData(NAND_HYNIX_READRETRY_REG_DATA *_reg_data
 
     switch (readretry_type)
     {
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-    	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+    	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
 		{
             // set data of RRT with it's inverse
             entry_size = reg_data->total_readretry_cnt * reg_data->readretry_reg_cnt * 2;
@@ -605,7 +612,7 @@ int NFC_PHY_HYNIX_READRETRY_MakeRegData(NAND_HYNIX_READRETRY_REG_DATA *_reg_data
             }
         } break;
 
-        case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+        case NAND_READRETRY_TYPE_HYNIX_1xNM_MLC:
         {
             entry_size = reg_data->total_readretry_cnt * reg_data->readretry_reg_cnt * 2;
 
@@ -642,11 +649,11 @@ int NFC_PHY_HYNIX_READRETRY_MakeReg(unsigned int _channel, unsigned int _phyway,
 
     switch(readretry_type)
     {
-	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
-	case NAND_PHY_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
+	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE:
+	case NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE:
         otp_size = 1026;
         break;
-	case NAND_PHY_READRETRY_TYPE_HYNIX_1xNM_MLC:
+	case NAND_READRETRY_TYPE_HYNIX_1xNM_MLC:
         otp_size = 528;
         break;
     default:

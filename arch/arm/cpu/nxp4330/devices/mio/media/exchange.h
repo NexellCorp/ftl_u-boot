@@ -127,8 +127,9 @@ typedef union __NAND__
             unsigned int cache_read          : 1;
             unsigned int cache_write         : 1;
             unsigned int interleave          : 1;
+            unsigned int randomize           : 1;
 
-            unsigned int _rsvd0 : (32-6);
+            unsigned int _rsvd0 : (32-7);
 
         } support_list;
 
@@ -144,8 +145,7 @@ typedef union __NAND__
             unsigned char paired_plane;
             unsigned char multiplane_erase;
 
-#define NAND_READRETRY_TYPE_MICRON_L83A             (1)
-#define NAND_READRETRY_TYPE_MICRON_L84A             (2)
+#define NAND_READRETRY_TYPE_MICRON_20NM             (1)
 #define NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE    (10)
 #define NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE   (11)
 #define NAND_READRETRY_TYPE_HYNIX_1xNM_MLC          (20)
@@ -519,10 +519,32 @@ typedef struct __ExSTD__
 #pragma pack(1)
 typedef struct __ExSYS__
 {
-    unsigned int lvd_detected;
-    unsigned int rst_detected;
+    struct
+    {
+        unsigned int io_req;
+        unsigned int bg_job;
+        unsigned int nfc_wp;
 
+    } gpio;
+
+    struct
+    {
+        unsigned int spor          : 1;
+        unsigned int led_indicator : 1;
+
+        unsigned int _rsvd0        : 32 -2;
+
+    } support_list;
+
+    // SPOR
+    unsigned int lvd_detected;
     void (*fnSpor)(void);
+
+    // Indicator
+    void (*fnIndicatorIoBusy)(void);
+    void (*fnIndicatorIoIdle)(void);
+    void (*fnIndicatorBgBusy)(void);
+    void (*fnIndicatorBgIdle)(void);
 
 } ExSYS;
 #pragma pack()

@@ -168,13 +168,13 @@ int mio_rwtest_run(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteR
             gstMioRwtestParam.uiCapacity, gstMioRwtestParam.uiMaxTransferSectors, gstMioRwtestParam.uiMinTransferSectors);
         do
         {
-            if (gstMioRwtestResult.uiCmdNo && !(gstMioRwtestResult.uiCmdNo % gstMioRwtestParam.uiFlushCmdCycle))
+            if (gstMioRwtestParam.uiFlushCmdCycle && gstMioRwtestResult.uiCmdNo && !(gstMioRwtestResult.uiCmdNo % gstMioRwtestParam.uiFlushCmdCycle))
             {
                 DBG_UBOOT_RWTEST("0x%08X mio_rwtest_run: Flush %u\n", CurrTestLoop, gstMioRwtestResult.uiCmdNo);
                 mio_flush();
                 gstMioRwtestResult.uiFlushCmdCnt += 1;
             }
-            else if (gstMioRwtestResult.uiCmdNo && !(gstMioRwtestResult.uiCmdNo % gstMioRwtestParam.uiStandbyCycle))
+            else if (gstMioRwtestParam.uiStandbyCycle && gstMioRwtestResult.uiCmdNo && !(gstMioRwtestResult.uiCmdNo % gstMioRwtestParam.uiStandbyCycle))
             {
                 DBG_UBOOT_RWTEST("0x%08X mio_rwtest_run: Standby %u)\n", CurrTestLoop, gstMioRwtestResult.uiCmdNo);
                 mio_standby();
@@ -185,10 +185,9 @@ int mio_rwtest_run(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteR
                     DBG_UBOOT_RWTEST("mio_rwtest_run: mio_rwtest_init() failed !!\n");
                     break;
                 }
-
                 gstMioRwtestResult.uiStandbyCmdCnt += 1;
             }
-            else if (gstMioRwtestResult.uiCmdNo && !(gstMioRwtestResult.uiCmdNo % gstMioRwtestParam.uiPowerdownCycle))
+            else if (gstMioRwtestParam.uiPowerdownCycle && gstMioRwtestResult.uiCmdNo && !(gstMioRwtestResult.uiCmdNo % gstMioRwtestParam.uiPowerdownCycle))
             { 
                 DBG_UBOOT_RWTEST("0x%08X mio_rwtest_run: Powerdown %u\n", CurrTestLoop, gstMioRwtestResult.uiCmdNo);
               //mio_powerdown();
@@ -200,7 +199,7 @@ int mio_rwtest_run(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteR
             else
             {
                 ucIsWrite = ((((unsigned int)rand())%100) >= (100 - gstMioRwtestParam.uiWriteRatio))? 1: 0;
-                ucIsSequent = ((((unsigned int)rand())%100) >= (100 - gstMioRwtestParam.uiWriteRatio))? 1: 0;
+                ucIsSequent = ((((unsigned int)rand())%100) >= (100 - gstMioRwtestParam.uiSeqRatio))? 1: 0;
 
                 if (ucIsWrite)
                 {
@@ -235,7 +234,7 @@ int mio_rwtest_run(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteR
                 }
                 else
                 {
-                    DBG_UBOOT_RWTEST("0x%08X mio_rwtest_read(0x%08x, 0x%8x), \tnextSeqAddr:0x%08x\n", CurrTestLoop, uiAddr, uiSectors, uiAddr + uiSectors);
+                    DBG_UBOOT_RWTEST("0x%08X mio_rwtest_read (0x%08x, 0x%8x), \tnextSeqAddr:0x%08x\n", CurrTestLoop, uiAddr, uiSectors, uiAddr + uiSectors);
                     uiReadSectors = mio_rwtest_read_verify(uiAddr, uiSectors);
                     if (uiReadSectors != uiSectors)
                     {
@@ -290,10 +289,10 @@ static int mio_rwtest_init(ulong ulSectorsToTest, ulong ulCapacity, unsigned cha
     gstMioRwtestParam.uiWriteRatio = ucWriteRatio; // 0 ~ 100 %
     gstMioRwtestParam.uiSeqRatio = ucSequentRatio; // 0 ~ 100 %
 
-    gstMioRwtestParam.uiFlushCmdCycle =  38;
-    gstMioRwtestParam.uiStandbyCycle =   200;
-    gstMioRwtestParam.uiPowerdownCycle = 100000;
-    gstMioRwtestParam.uiTrimCycle = 1000;
+    gstMioRwtestParam.uiFlushCmdCycle =  100;
+  //gstMioRwtestParam.uiStandbyCycle =   200;
+  //gstMioRwtestParam.uiPowerdownCycle = 100000;
+  //gstMioRwtestParam.uiTrimCycle = 1000;
 
     gstMioRwtestParam.uiSectorsToTest = (unsigned int)ulSectorsToTest;
 
@@ -307,7 +306,7 @@ static int mio_rwtest_init(ulong ulSectorsToTest, ulong ulCapacity, unsigned cha
   //gstMioRwtestParam.uiMaxTransferSectors = (32*1024*1024)/512; // 32 MB
 
     gstMioRwtestParam.uiMinTransferSectors = (4*1024)/512;       //  4 KB
-    gstMioRwtestParam.uiMaxTransferSectors = (1*1024*1024)/512;  //  1 MB
+    gstMioRwtestParam.uiMaxTransferSectors = (4*1024*1024)/512;  //  4 MB
 
     if (gstMioRwtestParam.uiMaxTransferSectors > (gstMioRwtestParam.uiBuffSize / 512))
     {

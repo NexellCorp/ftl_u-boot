@@ -137,8 +137,8 @@ int mio_format(int _format_type)
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
     Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
-    Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
-    Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
     Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
 
     /**************************************************************************
@@ -221,8 +221,8 @@ int mio_init(void)
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
     Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
-    Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
-    Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
     Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
 
     /**************************************************************************

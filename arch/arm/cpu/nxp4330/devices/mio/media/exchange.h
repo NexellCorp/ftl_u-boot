@@ -304,11 +304,13 @@ typedef struct __ExFTL__
     unsigned int (*fnIsReady)(void);
     unsigned int (*fnIsIdle)(void);
     unsigned int (*fnIsBusy)(void);
+    unsigned int (*fnIsAdminBusy)(void);
 
     // Misc Method
     unsigned int (*fnSetTime)(void);
     WARN * (*fnGetWarnList)(void);
     int (*fnGetNandInfo)(NAND *info);
+    int (*fnGetWearLevelData)(unsigned char _channel, unsigned char _way, void *buff, unsigned int buff_size);
 
 #define BLOCK_TYPE_MAPLOG           (0x8)
 #define BLOCK_TYPE_FREE             (0x9)
@@ -328,8 +330,8 @@ typedef struct __ExFTL__
 
     // Property
     unsigned int * Capacity;
-    unsigned int * Way;
-    unsigned int * Channel;
+    unsigned char * Way;
+    unsigned char * Channel;
     unsigned int * ReadRetryCount;
 
 } ExFTL;
@@ -358,6 +360,18 @@ typedef struct __ExBUFFER__
     unsigned int * SectorsOfWriteCache;
     unsigned int * WriteNfcIdx;
     unsigned int * WriteBlkIdx;
+
+    // Direct Read/Write Cache
+    unsigned int * BaseOfDirectReadCache;
+    unsigned int * SectorsOfDirectReadCache;
+    unsigned int * BaseOfDirectWriteCache;
+    unsigned int * SectorsOfDirectWriteCache;
+
+    // Admin buffer
+    unsigned int * BaseOfAdmin1;
+    unsigned int * SectorsOfAdmin1;
+    unsigned int * BaseOfAdmin2;
+    unsigned int * SectorsOfAdmin2;
 
 } ExBUFFER;
 #pragma pack()
@@ -405,11 +419,20 @@ typedef struct __ExSTATISTICS__
 
     struct
     {
+#if 1
+//#define FTL_CHANNELS                                (1)
+//#define FTL_WAYS                                    (4)
+        unsigned int (*corrected)[1];
+        unsigned int (*leveldetected)[1];
+        unsigned int (*uncorrectable)[1];
+#else
         unsigned int (*corrected)[];
         unsigned int (*leveldetected)[];
         unsigned int (*uncorrectable)[];
-
+#endif
     } ecc_sector;
+
+    unsigned int (*readretry_count)[1];
 
 } ExSTATISTICS;
 #pragma pack()
@@ -442,8 +465,8 @@ typedef struct __ExNFC__
 
     int (*fn1stRead)(unsigned int _channel, unsigned int _way, unsigned int _row, unsigned int _col);
     int (*fn2ndReadDataNoEcc)(unsigned int _channel, unsigned int _way, unsigned int _data_loop_count, unsigned int _bytes_per_data_ecc, void * _data_buffer, unsigned int _bytes_spare, void * _spare_buffer);
-    int (*fn2ndReadLog)(unsigned int _channel, unsigned int _way, unsigned int _row, unsigned int _col, unsigned int _log_loop_count, unsigned int _bytes_per_log_ecc, unsigned int _bytes_per_log_parity, unsigned int _log_ecc_bits, void * _log_buffer, unsigned int _data_loop_count, unsigned int _bytes_per_data_ecc, unsigned int _bytes_per_data_parity, unsigned int _data_ecc_bits, void * _data_buffer);
-    int (*fn2ndReadData)(unsigned int _stage, unsigned int _channel, unsigned int _way, unsigned int _row, unsigned int _col, unsigned int _fake_spare_row, unsigned int _fake_spare_col, unsigned int _data_loop_count, unsigned int _bytes_per_data_ecc, unsigned int _bytes_per_data_parity, unsigned int _data_ecc_bits, void * _data_buffer, unsigned int _bytes_per_spare_ecc, unsigned int _bytes_per_spare_parity, unsigned int _spare_ecc_bits, void * _spare_buffer);
+    int (*fn2ndReadLog)(unsigned int _channel, unsigned int _way, unsigned int _row, unsigned int _col, unsigned int _log_loop_count, unsigned int _bytes_per_log_ecc, unsigned int _bytes_per_log_parity, unsigned int _log_ecc_bits, void * _log_buffer, unsigned int _data_loop_count, unsigned int _bytes_per_data_ecc, unsigned int _bytes_per_data_parity, unsigned int _data_ecc_bits, void * _data_buffer, unsigned int _retryable);
+    int (*fn2ndReadData)(unsigned int _stage, unsigned int _channel, unsigned int _way, unsigned int _row, unsigned int _col, unsigned int _fake_spare_row, unsigned int _fake_spare_col, unsigned int _data_loop_count, unsigned int _bytes_per_data_ecc, unsigned int _bytes_per_data_parity, unsigned int _data_ecc_bits, void * _data_buffer, unsigned int _bytes_per_spare_ecc, unsigned int _bytes_per_spare_parity, unsigned int _spare_ecc_bits, void * _spare_buffer, unsigned int _retryable);
     int (*fn3rdRead)(unsigned int _channel, unsigned int _way);
 
     int (*fn1stWriteLog)(unsigned int _channel, unsigned int _way, unsigned int _row0, unsigned int _row1, unsigned int _col, unsigned int _multi_plane_write_cmd, unsigned int _cache_write_cmd, unsigned int _log_loop_count, unsigned int _bytes_per_log_ecc, unsigned int _bytes_per_log_parity, unsigned int _log_ecc_bits, void * _log_buffer, unsigned int _data_loop_count0, unsigned int _data_loop_count1, unsigned int _bytes_per_data_ecc, unsigned int _bytes_per_data_parity, unsigned int _data_ecc_bits, void * _data_buffer0, void * _data_buffer1);
@@ -541,10 +564,10 @@ typedef struct __ExSYS__
     void (*fnSpor)(void);
 
     // Indicator
-    void (*fnIndicatorIoBusy)(void);
-    void (*fnIndicatorIoIdle)(void);
-    void (*fnIndicatorBgBusy)(void);
-    void (*fnIndicatorBgIdle)(void);
+    void (*fnIndicatorReqBusy)(void);
+    void (*fnIndicatorReqIdle)(void);
+    void (*fnIndicatorNfcBusy)(void);
+    void (*fnIndicatorNfcIdle)(void);
 
 } ExSYS;
 #pragma pack()
@@ -617,7 +640,9 @@ typedef struct __ExDEBUG__
             // Error, Warnning
             unsigned int warn_prohibited_block_access : 1;
             unsigned int warn_ecc_uncorrectable       : 1;
-            unsigned int _rsvd3                       : 8 - 2;
+            unsigned int warn_ecc_uncorrectable_show  : 1;
+            unsigned int err_ecc_uncorrectable        : 1;
+            unsigned int _rsvd3                       : 8 - 4;
 
         } phy;
 

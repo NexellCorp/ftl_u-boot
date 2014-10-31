@@ -124,6 +124,7 @@ int mio_format(int _format_type)
     Exchange.debug.ftl.open = 1;
     Exchange.debug.ftl.memory_usage = 1;
     Exchange.debug.ftl.boot = 1;
+    Exchange.debug.ftl.block_summary = 1;
     Exchange.debug.ftl.error = 1;
   //Exchange.debug.ftl.boot_read_retry = 1;
   //Exchange.debug.ftl.read_retry = 1;
@@ -136,7 +137,9 @@ int mio_format(int _format_type)
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
     Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
-    Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
+    Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
 
     /**************************************************************************
      * FTL Format
@@ -205,7 +208,10 @@ int mio_init(void)
     Exchange.debug.ftl.open = 1;
     Exchange.debug.ftl.memory_usage = 1;
     Exchange.debug.ftl.boot = 1;
+    Exchange.debug.ftl.block_summary = 1;
     Exchange.debug.ftl.error = 1;
+  //Exchange.debug.ftl.boot_read_retry = 1;
+  //Exchange.debug.ftl.read_retry = 1;
 
   //Exchange.debug.nfc.sche.operation = 1;
 
@@ -215,7 +221,9 @@ int mio_init(void)
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
     Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
-    Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
+    Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
 
     /**************************************************************************
      * FTL Open & Boot

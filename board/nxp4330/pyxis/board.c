@@ -791,7 +791,8 @@ int board_late_init(void)
 }
 #endif	/* CONFIG_BAT_CHECK */
 
-#ifdef CONFIG_FASTBOOT
+#if 0
+//#ifdef CONFIG_FASTBOOT
 
 #define	LOGO_BGCOLOR	(0xffffff)
 static int _logo_left   = CFG_DISP_PRI_RESOL_WIDTH /2 +  50;

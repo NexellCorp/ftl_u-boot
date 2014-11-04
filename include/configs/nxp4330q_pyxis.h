@@ -188,7 +188,7 @@
 #define CONFIG_NAND_FTL
 //#define CONFIG_NAND_MTD
 
-#define CONFIG_ENV_IS_IN_NAND
+//#define CONFIG_ENV_IS_IN_NAND
 
 #if defined(CONFIG_NAND_FTL) && defined(CONFIG_NAND_MTD)
 #error "Duplicated config for NAND Driver!!!"
@@ -260,7 +260,7 @@
 
 #define CONFIG_CMD_EEPROM
 #define CONFIG_SPI								/* SPI EEPROM, not I2C EEPROM */
-//#define CONFIG_ENV_IS_IN_EEPROM
+#define CONFIG_ENV_IS_IN_EEPROM
 
 #if defined(CONFIG_CMD_EEPROM)
 

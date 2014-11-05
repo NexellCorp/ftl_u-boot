@@ -94,10 +94,10 @@
  *	U-Boot default cmd
  */
 #define CONFIG_CMD_MEMORY   /* md mm nm mw cp cmp crc base loop mtest */
-#define CONFIG_CMD_NET      /* bootp, tftpboot, rarpboot    */
+//#define CONFIG_CMD_NET      /* bootp, tftpboot, rarpboot    */
 #define CONFIG_CMD_RUN      /* run command in env variable  */
 #define CONFIG_CMD_SAVEENV  /* saveenv          */
-#define CONFIG_CMD_SOURCE   /* "source" command support */
+//#define CONFIG_CMD_SOURCE   /* "source" command support */
 #define CONFIG_CMD_BOOTD	/* "boot" command support */
 
 /*-----------------------------------------------------------------------
@@ -169,7 +169,7 @@
  * Ethernet configuration
  * depend on CONFIG_CMD_NET
  */
-#define CONFIG_DRIVER_DM9000			1
+//#define CONFIG_DRIVER_DM9000			1
 
 #if defined(CONFIG_CMD_NET)
 	/* DM9000 Ethernet device */
@@ -302,12 +302,12 @@
 		 */
 			#define	CONFIG_2STBOOT_OFFSET				0
 			#define	CONFIG_2STBOOT_SIZE					16*1024
-			#define	CONFIG_UBOOT_OFFSET					64*1024
-			#define	CONFIG_UBOOT_SIZE					(512-64)*1024
+			#define	CONFIG_UBOOT_OFFSET					20*1024
+			#define	CONFIG_UBOOT_SIZE					(512-20)*1024
 		#endif
 		#if defined(CONFIG_ENV_IS_IN_EEPROM)
-			#define	CONFIG_ENV_OFFSET					32*1024	/* 16 ~ 20K Environment */
-			#define CONFIG_ENV_SIZE						32*1024
+			#define	CONFIG_ENV_OFFSET					16*1024	/* 16 ~ 20K Environment */
+			#define CONFIG_ENV_SIZE						4*1024
 			#define CONFIG_ENV_RANGE					CONFIG_ENV_SIZE
 			#define CONFIG_SYS_DEF_EEPROM_ADDR			0					/* Need 0, when SPI */
 			#define CONFIG_SYS_I2C_FRAM									/* To avoid max length limit when spi write */
@@ -398,7 +398,7 @@
 //#define CONFIG_PMIC_VOLTAGE_CHECK_WITH_CHARGE
 //#define CONFIG_PMIC_SET_BOOTUP_VOLTAGE
 
-#define CONFIG_BAT_CHECK
+//#define CONFIG_BAT_CHECK
 #define CONFIG_FAST_BOOTUP
 
 #if defined(CONFIG_BAT_CHECK)
@@ -469,7 +469,7 @@
  * #> fatload mmc 0  0x.....	"file"
  *
  */
-#define	CONFIG_CMD_MMC
+//#define	CONFIG_CMD_MMC
 //#define CONFIG_ENV_IS_IN_MMC
 
 #if defined(CONFIG_CMD_MMC)
@@ -572,15 +572,15 @@
 /*-----------------------------------------------------------------------
  * UPDATE SDCARD
  */
-#define CONFIG_CMD_UPDATE_SDCARD
+//#define CONFIG_CMD_UPDATE_SDCARD
 
 
 /*-----------------------------------------------------------------------
  * Logo command
  */
-#define CONFIG_DISPLAY_OUT
+//#define CONFIG_DISPLAY_OUT
 
-#define CONFIG_LOGO_DEVICE_MMC
+//#define CONFIG_LOGO_DEVICE_MMC
 
 #if defined(CONFIG_LOGO_DEVICE_MMC) && defined(CONFIG_LOGO_DEVICE_NAND)
 #error "Duplicated config for logo device!!!"

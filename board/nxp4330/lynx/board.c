@@ -352,6 +352,34 @@ int power_init_board(void)
 #endif  /* CONFIG_BAT_CHECK */
 
 extern void	bd_display(void);
+
+static void auto_update(int io, int wait)
+{
+	unsigned int grp = PAD_GET_GROUP(io);
+	unsigned int bit = PAD_GET_BITNO(io);
+	int level = 1, i = 0;
+	char *cmd = "fastboot";
+
+	for (i = 0; wait > i; i++) {
+		switch (io & ~(32-1)) {
+		case PAD_GPIO_A:
+		case PAD_GPIO_B:
+		case PAD_GPIO_C:
+		case PAD_GPIO_D:
+		case PAD_GPIO_E:
+			level = NX_GPIO_GetInputValue(grp, bit);	break;
+		case PAD_GPIO_ALV:
+			level = NX_ALIVE_GetInputValue(bit);	break;
+		};
+		if (level)
+			break;
+		mdelay(1);
+	}
+
+	if (i == wait)
+		run_command (cmd, 0);
+}
+
 static void bd_display_run(char *cmd, int bl_duty, int bl_on)
 {
 	static int display_init = 0;
@@ -772,7 +800,8 @@ int board_late_init(void)
 }
 #endif	/* CONFIG_BAT_CHECK */
 
-#ifdef CONFIG_FASTBOOT
+#if 0
+//#ifdef CONFIG_FASTBOOT
 
 #define	LOGO_BGCOLOR	(0xffffff)
 static int _logo_left   = CFG_DISP_PRI_RESOL_WIDTH /2 +  50;

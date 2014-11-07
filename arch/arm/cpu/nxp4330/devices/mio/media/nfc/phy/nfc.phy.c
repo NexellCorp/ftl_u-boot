@@ -51,6 +51,7 @@
 
 #include <mach/devices.h>
 #include <mach/soc.h>
+#include <mach/platform.h>
 
 #elif defined (__BUILD_MODE_ARM_UBOOT_DEVICE_DRIVER__)
 #include <common.h>
@@ -592,7 +593,7 @@ unsigned int NFC_PHY_EccCorrection(char         * _error_at,
 
                 if (Exchange.debug.nfc.phy.info_ecc_correction)
                 {
-                    __print("%s\n", error_at); memset((void *)error_at, 0, strlen(error_at));
+                    if (NULL != error_at) { __print("%s\n", error_at); error_at = NULL; }
                     __print("Correction: location[%d] = %08x\n", 0, location[k]);
                     __print("Correction: err_read[location[%d]/32]   %08x\n", k, err_read[location[k]/32]);
                     __print("Correction: __POW(1,location[%d]%%32]  ^ %08x\n", k, __POW(1,location[k]%32));
@@ -612,7 +613,7 @@ unsigned int NFC_PHY_EccCorrection(char         * _error_at,
 
             if (Exchange.debug.nfc.phy.info_ecc_corrected)
             {
-                __print("%s\n", error_at);
+                if (NULL != error_at) { __print("%s\n", error_at); error_at = NULL; }
                 __print("Corrected: row(%04d),col(%04d): count(%d)\n", row, col, ecc_error_count);
             }
         }
@@ -839,16 +840,16 @@ unsigned int NFC_PHY_Init(unsigned int _scan_format)
 
 #if defined (__BUILD_MODE_ARM_LINUX_DEVICE_DRIVER__)
     __print = printk;
-    nfcI = (MCUS_I *)0xF0051000;
-    nfcShadowI = (NFC_SHADOW_I *)0xF0500000;
-    nfcShadowI16 = (NFC_SHADOW_I16 *)0xF0500000;
-    nfcShadowI32 = (NFC_SHADOW_I32 *)0xF0500000;
+    nfcI = (MCUS_I *)IO_ADDRESS(PHY_BASEADDR_MCUSTOP_MODULE);
+    nfcShadowI = (NFC_SHADOW_I *)__PB_IO_MAP_NAND_VIRT;
+    nfcShadowI16 = (NFC_SHADOW_I16 *)__PB_IO_MAP_NAND_VIRT;
+    nfcShadowI32 = (NFC_SHADOW_I32 *)__PB_IO_MAP_NAND_VIRT;
 #elif defined (__BUILD_MODE_ARM_UBOOT_DEVICE_DRIVER__)
     __print = printf;
-    nfcI = (MCUS_I *)0xC0051000;
-    nfcShadowI = (NFC_SHADOW_I *)0x2C000000;
-    nfcShadowI16 = (NFC_SHADOW_I16 *)0x2C000000;
-    nfcShadowI32 = (NFC_SHADOW_I32 *)0x2C000000;
+    nfcI = (MCUS_I *)IO_ADDRESS(PHY_BASEADDR_MCUSTOP_MODULE);
+    nfcShadowI = (NFC_SHADOW_I *)CONFIG_SYS_NAND_BASE;
+    nfcShadowI16 = (NFC_SHADOW_I16 *)CONFIG_SYS_NAND_BASE;
+    nfcShadowI32 = (NFC_SHADOW_I32 *)CONFIG_SYS_NAND_BASE;
 #endif
 
     NFC_PHY_DeInit();
@@ -856,7 +857,10 @@ unsigned int NFC_PHY_Init(unsigned int _scan_format)
     NFC_PHY_ChipSelect(0, 0, __FALSE);
     NFC_PHY_ChipSelect(0, 1, __FALSE);
 
+    Exchange.nfc.fnSuspend = NFC_PHY_Suspend;
+    Exchange.nfc.fnResume = NFC_PHY_Resume;
     Exchange.nfc.fnGetFeatures = NFC_PHY_GetFeatures;
+    Exchange.nfc.fnAdjustFeatures = NFC_PHY_AdjustFeatures;
     Exchange.nfc.fnSetFeatures = NFC_PHY_SetFeatures;
     Exchange.nfc.fnDelay = NFC_PHY_tDelay;
     Exchange.nfc.fnReadId = NFC_PHY_ReadId;
@@ -951,6 +955,27 @@ void NFC_PHY_DeInit(void)
 #endif
 
     if (Exchange.debug.nfc.phy.operation)  {__print("EWS.NFC.PHY: DeInit\n"); }
+}
+
+void NFC_PHY_Suspend(void)
+{
+    /* Nothing To Do */
+}
+
+void NFC_PHY_Resume(void)
+{
+    int way = 0;
+
+    NFC_PHY_SporInit();
+    NFC_PHY_SetAutoResetEnable(__FALSE);
+    NFC_PHY_ClearInterruptPending(0);
+    NFC_PHY_SetInterruptEnableAll(__FALSE);
+    NFC_PHY_AdjustFeatures();
+
+    for (way = 0; way < *Exchange.ftl.Way; way++)
+    {
+        NFC_PHY_NandReset(0, way);
+    }
 }
 
 /******************************************************************************

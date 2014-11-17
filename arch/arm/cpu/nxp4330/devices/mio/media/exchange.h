@@ -149,6 +149,7 @@ typedef union __NAND__
 #define NAND_READRETRY_TYPE_HYNIX_20NM_MLC_A_DIE    (10)
 #define NAND_READRETRY_TYPE_HYNIX_20NM_MLC_BC_DIE   (11)
 #define NAND_READRETRY_TYPE_HYNIX_1xNM_MLC          (20)
+#define NAND_READRETRY_TYPE_TOSHIBA_A19NM           (40)
             unsigned char read_retry;
 
             unsigned char _rsvd0[6];
@@ -454,7 +455,7 @@ typedef struct __ExNFC__
 
     void (*fnDelay)(unsigned int _tDelay);
 
-    int (*fnReadId)(unsigned int _channel, unsigned int _way, char * _id, char * _onfi_id);
+    int (*fnReadId)(unsigned int _channel, unsigned int _way, char * _id, char * _onfi_id, char * _jedec_id);
 
     void (*fnSetOnfiFeature)(unsigned int _channel, unsigned int _way, unsigned char _feature_address, unsigned int _parameter);
     void (*fnGetOnfiFeature)(unsigned int _channel, unsigned int _way, unsigned char _feature_address, unsigned int * _parameter);
@@ -489,7 +490,9 @@ typedef struct __ExNFC__
     int  (*fnReadRetry_GetTotalReadRetryCount)(unsigned int _channel, unsigned int _way);
     void *(*fnReadRetry_GetAddress)(void);
     void *(*fnReadRetry_GetRegDataAddress)(unsigned int _channel, unsigned int _way);
+    void (*fnReadRetry_ClearAllCurrReadRetryCount)(void);
     void (*fnReadRetry_PrintTable)(void);
+    void (*fnReadRetry_Post)(unsigned int _channel, unsigned int _way);
 
     int (*fnRandomize_Init)(int _buf_size);
     void (*fnRandomize_DeInit)(void);
@@ -607,7 +610,8 @@ typedef struct __ExDEBUG__
         unsigned int boot_read_retry : 1;
         unsigned int read_retry      : 1;
         unsigned int block_summary   : 1;
-        unsigned int _rsvd0          : 16 - 8;
+        unsigned int smart_log       : 1;
+        unsigned int _rsvd0          : 16 - 10;
 
         // Error, Warnning
         unsigned int error  : 1;

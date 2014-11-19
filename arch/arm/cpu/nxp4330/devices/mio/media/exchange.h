@@ -379,6 +379,21 @@ typedef struct __ExBUFFER__
 /******************************************************************************
  *
  ******************************************************************************/
+#pragma pack(1)
+ typedef struct __DEVICE_SUMMARY__
+{
+    unsigned int uiAccumEccError;
+    unsigned int uiAccumEccLevel;
+    unsigned int uiAccumEccSector;
+    unsigned int uiAccumEccCount;
+    unsigned char ucAccumEccMax;
+    unsigned char reserved[3];
+    unsigned short usAccumWriteFail;
+    unsigned short usAccumEraseFail;
+    unsigned int uiAccumReadRetry;
+
+} DEVICE_SUMMARY;
+#pragma pack()
 
 #pragma pack(1)
 typedef struct __ExSTATISTICS__
@@ -417,22 +432,7 @@ typedef struct __ExSTATISTICS__
 
     } ios;
 
-    struct
-    {
-#if 1
-//#define FTL_CHANNELS                                (1)
-//#define FTL_WAYS                                    (4)
-        unsigned int (*corrected)[1];
-        unsigned int (*leveldetected)[1];
-        unsigned int (*uncorrectable)[1];
-#else
-        unsigned int (*corrected)[];
-        unsigned int (*leveldetected)[];
-        unsigned int (*uncorrectable)[];
-#endif
-    } ecc_sector;
-
-    unsigned int (*readretry_count)[1];
+    DEVICE_SUMMARY **device_summary; // [FTL_WAYS][FTL_CHANNELS];
 
 } ExSTATISTICS;
 #pragma pack()
@@ -442,11 +442,14 @@ typedef struct __ExNFC__
 {
     unsigned int (*fnInit)(unsigned int _scan_format);
     void (*fnDeInit)(void);
+    void (*fnSuspend)(void);
+    void (*fnResume)(void);
 
     int  (*fnEccInfoInit)(unsigned int _max_channels, unsigned int _max_ways, const unsigned char *_way_map);
     void (*fnEccInfoDeInit)(void);
 
     void (*fnGetFeatures)(unsigned int * _max_channel, unsigned int * _max_way, void * _nand_config);
+    void (*fnAdjustFeatures)(void);
     void (*fnSetFeatures)(unsigned int _max_channel, unsigned int _max_way, void * _nand_config);
 
     void (*fnDelay)(unsigned int _tDelay);
@@ -462,6 +465,7 @@ typedef struct __ExNFC__
     int (*fnStatusIsRDY)(unsigned char _status);
     int (*fnStatusIsWP)(unsigned char _status);
     unsigned char (*fnStatusRead)(unsigned int _channel, unsigned int _way);
+    unsigned char (*fnStatusData)(unsigned int _channel, unsigned int _way);
 
     int (*fn1stRead)(unsigned int _channel, unsigned int _way, unsigned int _row, unsigned int _col);
     int (*fn2ndReadDataNoEcc)(unsigned int _channel, unsigned int _way, unsigned int _data_loop_count, unsigned int _bytes_per_data_ecc, void * _data_buffer, unsigned int _bytes_spare, void * _spare_buffer);
@@ -518,25 +522,15 @@ typedef struct __ExNFC__
 
     } ecc;
 
+    struct
+    {
+        unsigned short read_schedule_interval[2][4];
+        unsigned short write_schedule_interval[2][4];
+        unsigned short erase_schedule_interval[2][4];
+
+    } sig;
+
 } ExNFC;
-#pragma pack()
-
-#pragma pack(1)
-typedef struct __ExSTD__
-{
-    int (*__print)(const char *, ...);
-    int (*__sprintf)(char *, const char *, ...);
-    unsigned int (*__strlen)(const char *);
-    void * (*__memset)(void *, int, unsigned int);
-    void * (*__memcpy)(void *, const void *, unsigned int);
-    int (*__memcmp)(const void *, const void *, unsigned int);
-
-    unsigned long long (*__div64)(unsigned long long _dividend, unsigned long long _divisor);
-
-    unsigned short (*__get_crc16)(unsigned short _initial, void * _buffer, unsigned int _length);
-    unsigned int (*__get_crc32)(unsigned int _initial, void * _buffer, unsigned int _length);
-
-} ExSTD;
 #pragma pack()
 
 #pragma pack(1)
@@ -563,11 +557,32 @@ typedef struct __ExSYS__
     unsigned int lvd_detected;
     void (*fnSpor)(void);
 
-    // Indicator
-    void (*fnIndicatorReqBusy)(void);
-    void (*fnIndicatorReqIdle)(void);
-    void (*fnIndicatorNfcBusy)(void);
-    void (*fnIndicatorNfcIdle)(void);
+    // function
+    struct
+    {
+        // Kernel Schedule
+        void (*usleep)(unsigned long, unsigned long);
+        void (*msleep)(unsigned int);
+
+        // Indicator
+        void (*IndicatorReqBusy)(void);
+        void (*IndicatorReqIdle)(void);
+        void (*IndicatorNfcBusy)(void);
+        void (*IndicatorNfcIdle)(void);
+
+        // Misc
+        unsigned long long (*div64)(unsigned long long _dividend, unsigned long long _divisor);
+        unsigned short (*get_crc16)(unsigned short _initial, void * _buffer, unsigned int _length);
+        unsigned int (*get_crc32)(unsigned int _initial, void * _buffer, unsigned int _length);
+
+        int (*print)(const char *, ...);
+        int (*sprintf)(char *, const char *, ...);
+        unsigned int (*strlen)(const char *);
+        void * (*memset)(void *, int, unsigned int);
+        void * (*memcpy)(void *, const void *, unsigned int);
+        int (*memcmp)(const void *, const void *, unsigned int);
+
+    } fn;
 
 } ExSYS;
 #pragma pack()
@@ -577,10 +592,11 @@ typedef struct __ExDEBUG__
 {
     struct
     {
-        unsigned int block  : 1;
-        unsigned int media  : 1;
+        unsigned int block            : 1;
+        unsigned int block_background : 1;
+        unsigned int media            : 1;
 
-        unsigned int _rsvd0 : 32 - 2;
+        unsigned int _rsvd0           : 32 - 3;
 
     } misc;
 
@@ -666,7 +682,6 @@ typedef struct __EXCHANGES__
 
     ExNFC nfc;
 
-    ExSTD std;
     ExSYS sys;
     ExDEBUG debug;
 

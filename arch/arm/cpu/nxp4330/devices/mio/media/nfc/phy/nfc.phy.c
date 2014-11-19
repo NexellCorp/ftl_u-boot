@@ -51,6 +51,7 @@
 
 #include <mach/devices.h>
 #include <mach/soc.h>
+#include <mach/platform.h>
 
 #elif defined (__BUILD_MODE_ARM_UBOOT_DEVICE_DRIVER__)
 #include <common.h>
@@ -157,8 +158,8 @@ void NFC_PHY_SetNFCSEnable(unsigned int _select)
     volatile unsigned int regval = nfcI->nfcontrol;
 
     regval &= ~__POW(1,NFCONTROL_IRQPEND);
-    if (_select) { regval |= __POW(1,NFCONTROL_NCSENB);  if (Exchange.sys.fnIndicatorNfcBusy) { Exchange.sys.fnIndicatorNfcBusy(); } }
-    else         { regval &= ~__POW(1,NFCONTROL_NCSENB); if (Exchange.sys.fnIndicatorNfcIdle) { Exchange.sys.fnIndicatorNfcIdle(); } }
+    if (_select) { regval |= __POW(1,NFCONTROL_NCSENB); }
+    else         { regval &= ~__POW(1,NFCONTROL_NCSENB); NFC_PHY_tDelay(1); }
     regval = NFC_PHY_NfcontrolResetBit(regval);
 
     nfcI->nfcontrol = regval;
@@ -592,7 +593,7 @@ unsigned int NFC_PHY_EccCorrection(char         * _error_at,
 
                 if (Exchange.debug.nfc.phy.info_ecc_correction)
                 {
-                    __print("%s\n", error_at); memset((void *)error_at, 0, strlen(error_at));
+                    if (NULL != error_at) { __print("%s\n", error_at); error_at = NULL; }
                     __print("Correction: location[%d] = %08x\n", 0, location[k]);
                     __print("Correction: err_read[location[%d]/32]   %08x\n", k, err_read[location[k]/32]);
                     __print("Correction: __POW(1,location[%d]%%32]  ^ %08x\n", k, __POW(1,location[k]%32));
@@ -612,7 +613,7 @@ unsigned int NFC_PHY_EccCorrection(char         * _error_at,
 
             if (Exchange.debug.nfc.phy.info_ecc_corrected)
             {
-                __print("%s\n", error_at);
+                if (NULL != error_at) { __print("%s\n", error_at); error_at = NULL; }
                 __print("Corrected: row(%04d),col(%04d): count(%d)\n", row, col, ecc_error_count);
             }
         }
@@ -839,16 +840,16 @@ unsigned int NFC_PHY_Init(unsigned int _scan_format)
 
 #if defined (__BUILD_MODE_ARM_LINUX_DEVICE_DRIVER__)
     __print = printk;
-    nfcI = (MCUS_I *)0xF0051000;
-    nfcShadowI = (NFC_SHADOW_I *)0xF0500000;
-    nfcShadowI16 = (NFC_SHADOW_I16 *)0xF0500000;
-    nfcShadowI32 = (NFC_SHADOW_I32 *)0xF0500000;
+    nfcI = (MCUS_I *)IO_ADDRESS(PHY_BASEADDR_MCUSTOP_MODULE);
+    nfcShadowI = (NFC_SHADOW_I *)__PB_IO_MAP_NAND_VIRT;
+    nfcShadowI16 = (NFC_SHADOW_I16 *)__PB_IO_MAP_NAND_VIRT;
+    nfcShadowI32 = (NFC_SHADOW_I32 *)__PB_IO_MAP_NAND_VIRT;
 #elif defined (__BUILD_MODE_ARM_UBOOT_DEVICE_DRIVER__)
     __print = printf;
-    nfcI = (MCUS_I *)0xC0051000;
-    nfcShadowI = (NFC_SHADOW_I *)0x2C000000;
-    nfcShadowI16 = (NFC_SHADOW_I16 *)0x2C000000;
-    nfcShadowI32 = (NFC_SHADOW_I32 *)0x2C000000;
+    nfcI = (MCUS_I *)IO_ADDRESS(PHY_BASEADDR_MCUSTOP_MODULE);
+    nfcShadowI = (NFC_SHADOW_I *)CONFIG_SYS_NAND_BASE;
+    nfcShadowI16 = (NFC_SHADOW_I16 *)CONFIG_SYS_NAND_BASE;
+    nfcShadowI32 = (NFC_SHADOW_I32 *)CONFIG_SYS_NAND_BASE;
 #endif
 
     NFC_PHY_DeInit();
@@ -856,7 +857,10 @@ unsigned int NFC_PHY_Init(unsigned int _scan_format)
     NFC_PHY_ChipSelect(0, 0, __FALSE);
     NFC_PHY_ChipSelect(0, 1, __FALSE);
 
+    Exchange.nfc.fnSuspend = NFC_PHY_Suspend;
+    Exchange.nfc.fnResume = NFC_PHY_Resume;
     Exchange.nfc.fnGetFeatures = NFC_PHY_GetFeatures;
+    Exchange.nfc.fnAdjustFeatures = NFC_PHY_AdjustFeatures;
     Exchange.nfc.fnSetFeatures = NFC_PHY_SetFeatures;
     Exchange.nfc.fnDelay = NFC_PHY_tDelay;
     Exchange.nfc.fnReadId = NFC_PHY_ReadId;
@@ -870,6 +874,7 @@ unsigned int NFC_PHY_Init(unsigned int _scan_format)
     Exchange.nfc.fnStatusIsRDY = NFC_PHY_StatusIsRDY;
     Exchange.nfc.fnStatusIsWP = NFC_PHY_StatusIsWP;
     Exchange.nfc.fnStatusRead = NFC_PHY_StatusRead;
+    Exchange.nfc.fnStatusData = NFC_PHY_StatusData;
     Exchange.nfc.fn1stRead = NFC_PHY_1stRead;
     Exchange.nfc.fn2ndReadDataNoEcc = NFC_PHY_2ndReadDataNoEcc;
     Exchange.nfc.fn2ndReadLog = NFC_PHY_2ndReadLog;
@@ -951,6 +956,27 @@ void NFC_PHY_DeInit(void)
 #endif
 
     if (Exchange.debug.nfc.phy.operation)  {__print("EWS.NFC.PHY: DeInit\n"); }
+}
+
+void NFC_PHY_Suspend(void)
+{
+    /* Nothing To Do */
+}
+
+void NFC_PHY_Resume(void)
+{
+    int way = 0;
+
+    NFC_PHY_SporInit();
+    NFC_PHY_SetAutoResetEnable(__FALSE);
+    NFC_PHY_ClearInterruptPending(0);
+    NFC_PHY_SetInterruptEnableAll(__FALSE);
+    NFC_PHY_AdjustFeatures();
+
+    for (way = 0; way < *Exchange.ftl.Way; way++)
+    {
+        NFC_PHY_NandReset(0, way);
+    }
 }
 
 /******************************************************************************
@@ -1669,7 +1695,7 @@ void NFC_PHY_GetOnfiParameter(unsigned int _channel, unsigned int _way, unsigned
                 if (!read_done)
                 {
                     // Check Integrity CRC
-                    if (onfi_param->_f.integrity_crc == Exchange.std.__get_crc32(0x4F4E, (void *)onfi_param->_c, sizeof(onfi_param->_c) - 2))
+                    if (onfi_param->_f.integrity_crc == Exchange.sys.fn.get_crc16(0x4F4E, (void *)onfi_param->_c, sizeof(onfi_param->_c) - 2))
                     {
                         read_done = 1;
                     }
@@ -1723,7 +1749,7 @@ void NFC_PHY_GetOnfiParameter(unsigned int _channel, unsigned int _way, unsigned
                     if (!read_done)
                     {
                         // Check Integrity CRC
-                        if (onfi_param->_f.integrity_crc == Exchange.std.__get_crc32(0x4F4E, (void *)onfi_param->_c, sizeof(onfi_param->_c) - 2))
+                        if (onfi_param->_f.integrity_crc == Exchange.sys.fn.get_crc16(0x4F4E, (void *)onfi_param->_c, sizeof(onfi_param->_c) - 2))
                         {
                             read_done = 1;
                         }
@@ -1829,7 +1855,7 @@ void NFC_PHY_GetOnfiParameter(unsigned int _channel, unsigned int _way, unsigned
                     if (!read_done)
                     {
                         // Check Integrity CRC
-                        if (onfi_ext_param->_f.extended_parameter_page_integrity_crc == Exchange.std.__get_crc32(0x4F4E, (void *)(read_ext_parameter+2), entire_section_length-2))
+                        if (onfi_ext_param->_f.extended_parameter_page_integrity_crc == Exchange.sys.fn.get_crc16(0x4F4E, (void *)(read_ext_parameter+2), entire_section_length-2))
                         {
                             read_done = 1;
                         }
@@ -1905,6 +1931,21 @@ unsigned char NFC_PHY_StatusRead(unsigned int _channel, unsigned int _way)
     return status;
 }
 
+unsigned char NFC_PHY_StatusData(unsigned int _channel, unsigned int _way)
+{
+    unsigned int channel = _channel;
+    unsigned int way = _way;
+    unsigned char data = 0;
+
+    NFC_PHY_ChipSelect(channel, way, __TRUE);
+    {
+        data = NFC_PHY_RData();
+    }
+    NFC_PHY_ChipSelect(channel, way, __FALSE);
+
+    return data;
+}
+
 /******************************************************************************
  *
  ******************************************************************************/
@@ -1928,6 +1969,9 @@ int NFC_PHY_1stRead(unsigned int _channel,
         NFC_PHY_Addr(__NROOT(row&0x00FF0000,16));
         NFC_PHY_Cmd(NF_CMD_READ_2ND);
         NFC_PHY_tDelay(NfcTime.tWB);
+
+        NFC_PHY_Cmd(NF_CMD_READ_STATUS);
+        NFC_PHY_tDelay(NfcTime.tWHR);
     }
     NFC_PHY_ChipSelect(channel, way, __FALSE);
 
@@ -2968,16 +3012,16 @@ int NFC_PHY_2ndReadData(unsigned int _stage,
                         /**********************************************************
                          * Read Data
                          **********************************************************/
-                        NFC_PHY_EccDecoderReset(1024, spare_ecc_bits);
-                        NFC_PHY_EccDecoderSetOrg((unsigned int *)spare_parity_buffer, spare_ecc_bits);
-                        NFC_PHY_EccDecoderEnable(1024, spare_ecc_bits);
-
                         NFC_PHY_tDelay(NfcTime.tRHW);
                         NFC_PHY_Cmd(NF_CMD_READ_RANDOM_1ST);
                         NFC_PHY_Addr(__NROOT(col&0x000000FF,0));
                         NFC_PHY_Addr(__NROOT(col&0x0000FF00,8));
                         NFC_PHY_Cmd(NF_CMD_READ_RANDOM_2ND);
                         NFC_PHY_tDelay(NfcTime.tCCS2);
+
+                        NFC_PHY_EccDecoderReset(1024, spare_ecc_bits);
+                        NFC_PHY_EccDecoderSetOrg((unsigned int *)spare_parity_buffer, spare_ecc_bits);
+                        NFC_PHY_EccDecoderEnable(1024, spare_ecc_bits);
 
                         // 1st 512 data / 2nd 512 fake
                         fake = spare_fake_buffer;

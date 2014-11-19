@@ -101,6 +101,8 @@ int get_number(void)
         }
 
     } while (1);
+
+    return number;
 }
 
 void do_mio_format(void)

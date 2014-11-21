@@ -97,27 +97,24 @@ int mio_format(int _format_type)
     }
 
     /**************************************************************************
-     * FTL Need Leaner Buffer
+     * MIO Exchange Init
      **************************************************************************/
-    DBG_MEDIA("mio_format: Memory Pool Pre Alloc:\n");
-    Exchange.buffer.mpool_size  = 0;
-    Exchange.buffer.mpool_size += 1 * 4 * (4<<20); // 1CH x 4WAY x 4MB (Page Map Table per Lun)
-    Exchange.buffer.mpool_size += 1 * 4 * (1<<20); // 1CH x 4WAY x 1MB (Update Map Table per Lun)
-    Exchange.buffer.mpool_size += (1<<20);         // 1MB (Misc)
-    Exchange.buffer.mpool = (unsigned char *)malloc(Exchange.buffer.mpool_size);
-
-    if (!Exchange.buffer.mpool)
-    {
-        DBG_MEDIA("mio_format: Memory Pool Pre Alloc: fail\n");
-        return -1;
-    }
-
-    DBG_MEDIA("mio_format: EXCHANGE_init:\n");
+    if (Exchange.debug.misc.uboot_format) { printf("MIO.FORMAT: EXCHANGE_init()\n"); }
     EXCHANGE_init();
 
     /**************************************************************************
      * MIO Debug Options
      **************************************************************************/
+  //Exchange.debug.misc.block_thread = 1;
+  //Exchange.debug.misc.block_transaction = 1;
+  //Exchange.debug.misc.block_background = 1;
+  //Exchange.debug.misc.media_open = 1;
+  //Exchange.debug.misc.media_format = 1;
+  //Exchange.debug.misc.media_close = 1;
+  //Exchange.debug.misc.smart_store = 1;
+    Exchange.debug.misc.uboot_format = 1;
+  //Exchange.debug.misc.uboot_init = 1;
+
     Exchange.debug.ftl.format = 1;
     Exchange.debug.ftl.format_progress = 1;
     Exchange.debug.ftl.configurations = 1;
@@ -125,9 +122,8 @@ int mio_format(int _format_type)
     Exchange.debug.ftl.memory_usage = 1;
     Exchange.debug.ftl.boot = 1;
     Exchange.debug.ftl.block_summary = 1;
+    Exchange.debug.ftl.warn = 1;
     Exchange.debug.ftl.error = 1;
-  //Exchange.debug.ftl.boot_read_retry = 1;
-  //Exchange.debug.ftl.read_retry = 1;
 
   //Exchange.debug.nfc.sche.operation = 1;
 
@@ -136,22 +132,43 @@ int mio_format(int _format_type)
   //Exchange.debug.nfc.phy.info_ecc = 1;
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
+  //Exchange.debug.nfc.phy.info_randomizer = 1;
+  //Exchange.debug.nfc.phy.info_readretry = 1;
+  //Exchange.debug.nfc.phy.info_readretry_table = 1;
+  //Exchange.debug.nfc.phy.info_readretry_otp_table = 1;
     Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
   //Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
   //Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
     Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
 
     /**************************************************************************
+     * FTL Need Leaner Buffer
+     **************************************************************************/
+    if (Exchange.debug.misc.uboot_format) { Exchange.sys.fn.print("MIO.FORMAT: Memory Pool Pre-Allocation\n"); }
+
+    Exchange.buffer.mpool_size  = 0;
+    Exchange.buffer.mpool_size += 1 * 4 * (4<<20); // 1CH x 4WAY x 4MB (Page Map Table per Lun)
+    Exchange.buffer.mpool_size += 1 * 4 * (1<<20); // 1CH x 4WAY x 1MB (Update Map Table per Lun)
+    Exchange.buffer.mpool_size += (1<<20);         // 1MB (Misc)
+    Exchange.buffer.mpool = (unsigned char *)malloc(Exchange.buffer.mpool_size);
+
+    if (!Exchange.buffer.mpool)
+    {
+        Exchange.sys.fn.print("MIO.FORMAT: Memory Pool Pre-Allocation Fail\n");
+        return -1;
+    }
+
+    /**************************************************************************
      * FTL Format
      **************************************************************************/
-    DBG_MEDIA("mio_format: Exchange.ftl.fnFormat()\n");
+    if (Exchange.debug.misc.uboot_format) { Exchange.sys.fn.print("MIO.FORMAT: Exchange.ftl.fnFormat()\n"); }
     if ((resp = Exchange.ftl.fnFormat((unsigned char *)"NXP4330", 0xC0067000, (unsigned char)_format_type)) < 0)
     {
-        DBG_MEDIA("mio_format: Exchange.ftl.fnFormat: fail\n");
+        Exchange.sys.fn.print("MIO.FORMAT: Exchange.ftl.fnFormat() Fail\n");
     }
 
     capacity = *Exchange.ftl.Capacity;
-    DBG_MEDIA("mio_init: Capacity %xh(%d) Sectors = %d MB: \n", capacity, capacity, ((capacity>>10)<<9)>>10);
+    Exchange.sys.fn.print("MIO.FORMAT: Capacity %xh(%d) Sectors = %d MB\n", capacity, capacity, ((capacity>>10)<<9)>>10);
 
     is_mio_init = 1;
 
@@ -165,13 +182,14 @@ int mio_format(int _format_type)
         return -1;
     }
 #endif
+
     return 0;
 }
 
 int mio_init(void)
 {
 #if defined (__MEDIA_ON_NAND__)
-	struct nand_ftl *nx_nand;
+	struct nand_ftl * nx_nand;
 
     int resp = -1;
     int capacity = -1;
@@ -182,26 +200,24 @@ int mio_init(void)
     }
 
     /**************************************************************************
-     * FTL Need Leaner Buffer
+     * MIO Exchange Init
      **************************************************************************/
-    Exchange.buffer.mpool_size  = 0;
-    Exchange.buffer.mpool_size += 1 * 4 * (4<<20); // 1CH x 4WAY x 4MB (Page Map Table per Lun)
-    Exchange.buffer.mpool_size += 1 * 4 * (1<<20); // 1CH x 4WAY x 1MB (Update Map Table per Lun)
-    Exchange.buffer.mpool_size += (1<<20);         // 1MB (Misc)
-    Exchange.buffer.mpool = (unsigned char *)malloc(Exchange.buffer.mpool_size);
-
-    if (!Exchange.buffer.mpool)
-    {
-        DBG_MEDIA("mio_init: Memory Pool Pre Alloc: fail\n");
-        return -1;
-    }
-
-    DBG_MEDIA("mio_init: EXCHANGE_init:\n");
+    if (Exchange.debug.misc.uboot_init) { printf("MIO.INIT: EXCHANGE_init()\n"); }
     EXCHANGE_init();
 
     /**************************************************************************
      * MIO Debug Options
      **************************************************************************/
+  //Exchange.debug.misc.block_thread = 1;
+  //Exchange.debug.misc.block_transaction = 1;
+  //Exchange.debug.misc.block_background = 1;
+  //Exchange.debug.misc.media_open = 1;
+  //Exchange.debug.misc.media_format = 1;
+  //Exchange.debug.misc.media_close = 1;
+  //Exchange.debug.misc.smart_store = 1;
+  //Exchange.debug.misc.uboot_format = 1;
+    Exchange.debug.misc.uboot_init = 1;
+
     Exchange.debug.ftl.format = 1;
     Exchange.debug.ftl.format_progress = 1;
     Exchange.debug.ftl.configurations = 1;
@@ -209,9 +225,8 @@ int mio_init(void)
     Exchange.debug.ftl.memory_usage = 1;
     Exchange.debug.ftl.boot = 1;
     Exchange.debug.ftl.block_summary = 1;
+    Exchange.debug.ftl.warn = 1;
     Exchange.debug.ftl.error = 1;
-  //Exchange.debug.ftl.boot_read_retry = 1;
-  //Exchange.debug.ftl.read_retry = 1;
 
   //Exchange.debug.nfc.sche.operation = 1;
 
@@ -220,27 +235,48 @@ int mio_init(void)
   //Exchange.debug.nfc.phy.info_ecc = 1;
   //Exchange.debug.nfc.phy.info_ecc_correction = 1;
   //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
+  //Exchange.debug.nfc.phy.info_randomizer = 1;
+  //Exchange.debug.nfc.phy.info_readretry = 1;
+  //Exchange.debug.nfc.phy.info_readretry_table = 1;
+  //Exchange.debug.nfc.phy.info_readretry_otp_table = 1;
     Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
   //Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
   //Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
     Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
 
     /**************************************************************************
+     * FTL Need Leaner Buffer
+     **************************************************************************/
+    if (Exchange.debug.misc.uboot_init) { Exchange.sys.fn.print("MIO.INIT: Memory Pool Pre-Allocation\n"); }
+
+    Exchange.buffer.mpool_size  = 0;
+    Exchange.buffer.mpool_size += 1 * 4 * (4<<20); // 1CH x 4WAY x 4MB (Page Map Table per Lun)
+    Exchange.buffer.mpool_size += 1 * 4 * (1<<20); // 1CH x 4WAY x 1MB (Update Map Table per Lun)
+    Exchange.buffer.mpool_size += (1<<20);         // 1MB (Misc)
+    Exchange.buffer.mpool = (unsigned char *)malloc(Exchange.buffer.mpool_size);
+
+    if (!Exchange.buffer.mpool)
+    {
+        Exchange.sys.fn.print("MIO.INIT: Memory Pool Pre-Allocation Fail\n");
+        return -1;
+    }
+
+    /**************************************************************************
      * FTL Open & Boot
      **************************************************************************/
     do 
     {
-        DBG_MEDIA("mio_init: Exchange.ftl.fnOpen()\n");
+        if (Exchange.debug.misc.uboot_init) { Exchange.sys.fn.print("MIO.INIT: Exchange.ftl.fnOpen()\n"); }
         if ((resp = Exchange.ftl.fnOpen((unsigned char *)"NXP4330", 0xC0067000, 0)) < 0)
         {
-            DBG_MEDIA("mio_init: Exchange.ftl.fnOpen(): fail\n");
+            Exchange.sys.fn.print("MIO.INIT: Exchange.ftl.fnOpen() Fail\n");
             break;
         }
 
-        DBG_MEDIA("mio_init: Exchange.ftl.fnBoot(0)\n");
+        if (Exchange.debug.misc.uboot_init) { Exchange.sys.fn.print("MIO.INIT: Exchange.ftl.fnBoot()\n"); }
         if ((resp = Exchange.ftl.fnBoot(0)) < 0)
         {
-            DBG_MEDIA("mio_init: Exchange.ftl.fnBoot(0): fail\n");
+            Exchange.sys.fn.print("MIO.INIT: Exchange.ftl.fnBoot() Fail\n");
             break;
         }
 
@@ -253,11 +289,11 @@ int mio_init(void)
     }
 
     capacity = *Exchange.ftl.Capacity;
-    DBG_MEDIA("WriteCacheBase: 0x%0X, Sectors: 0x%0X\n", (U32)(*Exchange.buffer.BaseOfWriteCache), (U32)(*Exchange.buffer.SectorsOfWriteCache));
-    DBG_MEDIA("ReadBufferBase: 0x%0X, Sectors: 0x%0X\n", (U32)(*Exchange.buffer.BaseOfReadBuffer), (U32)(*Exchange.buffer.SectorsOfReadBuffer));
-    DBG_MEDIA("mio_init: Capacity %xh(%d) Sectors = %d MB: \n", capacity, capacity, ((capacity>>10)<<9)>>10);
-
+    Exchange.sys.fn.print("MIO.INIT: Capacity %xh(%d) Sectors = %d MB\n", capacity, capacity, ((capacity>>10)<<9)>>10);
     is_mio_init = 1;
+
+    Exchange.sys.fn.print("MIO.INIT.WriteCacheBase: 0x%0x, Sectors: 0x%0x\n", (U32)(*Exchange.buffer.BaseOfWriteCache), (U32)(*Exchange.buffer.SectorsOfWriteCache));
+    Exchange.sys.fn.print("MIO.INIT.ReadBufferBase: 0x%0x, Sectors: 0x%0x\n", (U32)(*Exchange.buffer.BaseOfReadBuffer), (U32)(*Exchange.buffer.SectorsOfReadBuffer));
 
     NFC_PHY_LOWAPI_init();
 
@@ -324,7 +360,7 @@ int mio_init_rwtest_buffer(void)
 
         if (!gstRW.pucWData || !gstRW.pucRData)
         {
-            DBG_MEDIA("RW data buffer alloc failed!\n");
+            Exchange.sys.fn.print("RW data buffer alloc failed!\n");
 
             if (gstRW.pucWData)
                 free(gstRW.pucWData);
@@ -456,7 +492,6 @@ int mio_info(void)
     return 0;
 }
 
-
 /*******************************************************************************
  * get_mio_capacity()
  *******************************************************************************/
@@ -468,7 +503,7 @@ int get_mio_capacity(void)
 
     if (!is_mio_init)
     {
-        DBG_MEDIA("get_mio_capacity(): mio is not initialized!!\n");
+        Exchange.sys.fn.print("get_mio_capacity(): mio is not initialized!!\n");
         return 0;
     }
 
@@ -476,7 +511,7 @@ int get_mio_capacity(void)
 
     if (resp < 0)
     {
-        DBG_MEDIA("get_mio_capacity(): failed to get NAND information.\n");
+        Exchange.sys.fn.print("get_mio_capacity(): failed to get NAND information.\n");
         return 0;
     }
 
@@ -517,7 +552,7 @@ ulong mio_read(ulong blknr, lbaint_t blkcnt, void *pvBuffer)
 
     if (!is_mio_init)
     {
-        DBG_MEDIA("mio_read(): mio is not initialized!!\n");
+        Exchange.sys.fn.print("mio_read(): mio is not initialized!!\n");
         return 0;
     }
 
@@ -525,7 +560,7 @@ ulong mio_read(ulong blknr, lbaint_t blkcnt, void *pvBuffer)
     stFtl.uiSectorsLeft = blkcnt;
     stFtl.uiPartialAddr = uiAddress;
 
-  //DBG_MEDIA("mio_read(): 0x%0X, 0x%0X\n", (U32)blknr, (U32)blkcnt);
+  //Exchange.sys.fn.print("mio_read(): 0x%0X, 0x%0X\n", (U32)blknr, (U32)blkcnt);
 
     while (stFtl.uiSectorsLeft || stData.uiSectorsLeft)
     {
@@ -542,7 +577,7 @@ ulong mio_read(ulong blknr, lbaint_t blkcnt, void *pvBuffer)
             siStartExtIndex = mio_cmd_to_ftl(IO_CMD_READ, 0, stFtl.uiPartialAddr, stFtl.uiPartialSectors);
             if (siStartExtIndex >= 0)
             {
-              //DBG_MEDIA("mio_cmd_to_ftl(READ): 0x%0X, 0x%0X\n", stFtl.uiPartialAddr, stFtl.uiPartialSectors);
+              //Exchange.sys.fn.print("mio_cmd_to_ftl(READ): 0x%0X, 0x%0X\n", stFtl.uiPartialAddr, stFtl.uiPartialSectors);
             
                 if (uiAddress == stFtl.uiPartialAddr)
                 {
@@ -571,7 +606,7 @@ ulong mio_read(ulong blknr, lbaint_t blkcnt, void *pvBuffer)
                     stData.uiPartialSectors = stData.uiSectorsLeft;
 
                 mio_fill_read_buffer(pucBuffer, stData.uiPartialSectors);
-              //DBG_MEDIA("mio_fill_read_buffer: 0x%0X, 0x%0X\n", (U32)pucBuffer, stData.uiPartialSectors);
+              //Exchange.sys.fn.print("mio_fill_read_buffer: 0x%0X, 0x%0X\n", (U32)pucBuffer, stData.uiPartialSectors);
 
                 pucBuffer += (stData.uiPartialSectors << 9);
                 stData.uiSectorsLeft -= stData.uiPartialSectors;
@@ -611,11 +646,11 @@ ulong mio_write(ulong blknr, lbaint_t blkcnt, const void *pvBuffer)
 
     if (!is_mio_init)
     {
-        DBG_MEDIA("mio_write(): mio is not initialized!!\n");
+        Exchange.sys.fn.print("mio_write(): mio is not initialized!!\n");
         return 0;
     }
 
-  //DBG_MEDIA("mio_write(): 0x%lX, 0x%lX\n", blknr, blkcnt);
+  //Exchange.sys.fn.print("mio_write(): 0x%lX, 0x%lX\n", blknr, blkcnt);
 
     stData.uiSectorsLeft = blkcnt;
     stFtl.uiSectorsLeft = blkcnt;
@@ -642,7 +677,7 @@ ulong mio_write(ulong blknr, lbaint_t blkcnt, const void *pvBuffer)
             siStartExtIndex = mio_cmd_to_ftl(IO_CMD_WRITE, stFtl.uiFeature, stFtl.uiPartialAddr, stFtl.uiPartialSectors);
             if (siStartExtIndex >= 0)
             {
-              //DBG_MEDIA("mio_cmd_to_ftl(WRITE): 0x%0X, 0x%0X\n", stFtl.uiPartialAddr, stFtl.uiPartialSectors);
+              //Exchange.sys.fn.print("mio_cmd_to_ftl(WRITE): 0x%0X, 0x%0X\n", stFtl.uiPartialAddr, stFtl.uiPartialSectors);
                 if (uiAddress == stFtl.uiPartialAddr)
                 {
                     // set external index
@@ -665,7 +700,7 @@ ulong mio_write(ulong blknr, lbaint_t blkcnt, const void *pvBuffer)
             stData.uiAvaliableSectors += 1;
             stData.uiAvaliableSectors = *Exchange.buffer.SectorsOfWriteCache - stData.uiAvaliableSectors;
 
-          //DBG_MEDIA("Index: EXT(0x%0X), NAND(0x%0X), Aval:0x%0X\n", *Exchange.buffer.WriteBlkIdx, *Exchange.buffer.WriteNfcIdx, stData.uiAvaliableSectors);
+          //Exchange.sys.fn.print("Index: EXT(0x%0X), NAND(0x%0X), Aval:0x%0X\n", *Exchange.buffer.WriteBlkIdx, *Exchange.buffer.WriteNfcIdx, stData.uiAvaliableSectors);
             if (stData.uiAvaliableSectors)
             {
                 if (stData.uiSectorsLeft > stData.uiAvaliableSectors)
@@ -674,7 +709,7 @@ ulong mio_write(ulong blknr, lbaint_t blkcnt, const void *pvBuffer)
                     stData.uiPartialSectors = stData.uiSectorsLeft;
 
                 mio_fill_write_cache(pucBuffer, stData.uiPartialSectors);
-              //DBG_MEDIA("mio_fill_write_cache: 0x%0X, 0x%0X\n", (U32)pucBuffer, stData.uiPartialSectors);
+              //Exchange.sys.fn.print("mio_fill_write_cache: 0x%0X, 0x%0X\n", (U32)pucBuffer, stData.uiPartialSectors);
 
                 pucBuffer += (stData.uiPartialSectors << 9);
                 stData.uiSectorsLeft -= stData.uiPartialSectors;
@@ -756,8 +791,8 @@ int mio_nand_write(loff_t ofs, size_t *len, u_char *buf)
 
     if (!NFC_PHY_LOWAPI_is_init())
     {
-        DBG_MEDIA("mio_nand_write(): error! NFC_PHY_LOWAPI is not initialized!\n");
-        return 0;
+        Exchange.sys.fn.print("mio_nand_write(): error! NFC_PHY_LOWAPI is not initialized!\n");
+        return -1;
     }
 
     ret = NFC_PHY_LOWAPI_nand_write(ofs, len, buf);
@@ -771,8 +806,8 @@ int mio_nand_read(loff_t ofs, size_t *len, u_char *buf)
 
     if (!NFC_PHY_LOWAPI_is_init())
     {
-        DBG_MEDIA("mio_nand_read(): error! NFC_PHY_LOWAPI is not initialized!\n");
-        return 0;
+        Exchange.sys.fn.print("mio_nand_read(): error! NFC_PHY_LOWAPI is not initialized!\n");
+        return -1;
     }
 
     ret = NFC_PHY_LOWAPI_nand_read(ofs, len, buf);
@@ -786,8 +821,8 @@ int mio_nand_erase(loff_t ofs, size_t size)
 
     if (!NFC_PHY_LOWAPI_is_init())
     {
-        DBG_MEDIA("mio_nand_erase(): error! NFC_PHY_LOWAPI is not initialized!\n");
-        return 0;
+        Exchange.sys.fn.print("mio_nand_erase(): error! NFC_PHY_LOWAPI is not initialized!\n");
+        return -1;
     }
 
     ret = NFC_PHY_LOWAPI_nand_erase(ofs, size);
@@ -803,7 +838,7 @@ int mio_nand_raw_write(loff_t ofs, size_t *len, u_char *buf)
 	info.channel = 0;
 	info.phyway = 0;
 	info.pages_per_block = 256;
-	info.bytes_per_page = 8192;
+	info.bytes_per_page = 16384; //8192;
 	info.blocks_per_lun = 4096;
 
     /*******************************************************************************
@@ -823,7 +858,7 @@ int mio_nand_raw_read(loff_t ofs, size_t *len, u_char *buf)
 	info.channel = 0;
 	info.phyway = 0;
 	info.pages_per_block = 256;
-	info.bytes_per_page = 8192;
+	info.bytes_per_page = 16384; //8192;
 	info.blocks_per_lun = 4096;
 
     /*******************************************************************************
@@ -918,7 +953,7 @@ static void mio_fill_read_buffer(void *pvBuff, U32 uiSectors)
         uiCpyBytes = (*Exchange.buffer.SectorsOfReadBuffer - uiCurrExtIndex) << 9;
         memcpy((void *)pucDestBuff, (const void *)pucSrcBuff, uiCpyBytes);
 #if defined (__SUPPORT_DEBUG_MIO_UBOOT_ERROR_STOP__)
-        if (!uiCpyBytes) { DBG_MEDIA("mio_fill_read_buffer: memcpy error (copybytes 0)\n"); while(1); }
+        if (!uiCpyBytes) { Exchange.sys.fn.print("mio_fill_read_buffer: memcpy error (copybytes 0)\n"); while(1); }
 #endif
 
         pucDestBuff += uiCpyBytes;
@@ -926,7 +961,7 @@ static void mio_fill_read_buffer(void *pvBuff, U32 uiSectors)
         uiCpyBytes = (uiSectors << 9) - uiCpyBytes;
         memcpy((void *)pucDestBuff, (const void *)pucSrcBuff, uiCpyBytes);
 #if defined (__SUPPORT_DEBUG_MIO_UBOOT_ERROR_STOP__)
-        if (!uiCpyBytes) { DBG_MEDIA("mio_fill_read_buffer: memcpy error (copybytes 0)\n"); while(1); }
+        if (!uiCpyBytes) { Exchange.sys.fn.print("mio_fill_read_buffer: memcpy error (copybytes 0)\n"); while(1); }
 #endif
     }
     else
@@ -935,7 +970,7 @@ static void mio_fill_read_buffer(void *pvBuff, U32 uiSectors)
         uiCpyBytes = uiSectors << 9;
         memcpy((void *)pucDestBuff, (const void *)pucSrcBuff, uiCpyBytes);
 #if defined (__SUPPORT_DEBUG_MIO_UBOOT_ERROR_STOP__)
-        if (!uiCpyBytes) { DBG_MEDIA("mio_fill_read_buffer: memcpy error (copybytes 0)\n"); while(1); }
+        if (!uiCpyBytes) { Exchange.sys.fn.print("mio_fill_read_buffer: memcpy error (copybytes 0)\n"); while(1); }
 #endif
     }
 }
@@ -953,7 +988,7 @@ static void mio_fill_write_cache(const void *pvBuff, U32 uiSectors)
         uiCpyBytes = (*Exchange.buffer.SectorsOfWriteCache - uiCurrExtIndex) << 9;
         memcpy((void *)pucDestBuff, (const void *)pucSrcBuff, uiCpyBytes);
 #if defined (__SUPPORT_DEBUG_MIO_UBOOT_ERROR_STOP__)
-        if (!uiCpyBytes) { DBG_MEDIA("mio_fill_write_cache: memcpy error (copybytes 0)\n"); while(1); }
+        if (!uiCpyBytes) { Exchange.sys.fn.print("mio_fill_write_cache: memcpy error (copybytes 0)\n"); while(1); }
 #endif
 
         pucDestBuff = (U8 *)(*Exchange.buffer.BaseOfWriteCache);
@@ -961,7 +996,7 @@ static void mio_fill_write_cache(const void *pvBuff, U32 uiSectors)
         uiCpyBytes = (uiSectors << 9) - uiCpyBytes;
         memcpy((void *)pucDestBuff, (const void *)pucSrcBuff, uiCpyBytes);
 #if defined (__SUPPORT_DEBUG_MIO_UBOOT_ERROR_STOP__)
-        if (!uiCpyBytes) { DBG_MEDIA("mio_fill_write_cache: memcpy error (copybytes 0)\n"); while(1); }
+        if (!uiCpyBytes) { Exchange.sys.fn.print("mio_fill_write_cache: memcpy error (copybytes 0)\n"); while(1); }
 #endif
     }
     else
@@ -970,7 +1005,7 @@ static void mio_fill_write_cache(const void *pvBuff, U32 uiSectors)
         uiCpyBytes = uiSectors << 9;
         memcpy((void *)pucDestBuff, (const void *)pucSrcBuff, uiCpyBytes);
 #if defined (__SUPPORT_DEBUG_MIO_UBOOT_ERROR_STOP__)
-        if (!uiCpyBytes) { DBG_MEDIA("mio_fill_write_cache: memcpy error (copybytes 0)\n"); while(1); }
+        if (!uiCpyBytes) { Exchange.sys.fn.print("mio_fill_write_cache: memcpy error (copybytes 0)\n"); while(1); }
 #endif
     }
 }
@@ -982,13 +1017,13 @@ int mio_rwtest(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteRatio
 {
     if (!is_mio_init)
     {
-        DBG_MEDIA("mio_nand_write(): mio is not initialized!!\n");
+        Exchange.sys.fn.print("mio_nand_write(): mio is not initialized!!\n");
         return -1;
     }
 
     if (ulCapacity < 4*1024)
     {
-        DBG_MEDIA("mio_rwtest(): wrong capacity: %lu\n", ulCapacity);
+        Exchange.sys.fn.print("mio_rwtest(): wrong capacity: %lu\n", ulCapacity);
         return -1;
     }
 
@@ -1005,8 +1040,7 @@ int mio_rwtest(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteRatio
     if (ucSequentRatio > 100)
         ucSequentRatio = 100;
 
-    DBG_MEDIA("mio_rwtest(): %lu sectors(%lu MB), Capacity: %lu sectors(%lu MB), writeRatio:%d%%, sequentRatio:%d%%\n",
-        ulTestSectors, ulTestSectors/(2*1024), ulCapacity, ulCapacity/(2*1024), ucWriteRatio, ucSequentRatio);
+    Exchange.sys.fn.print("mio_rwtest(): %lu sectors(%lu MB), Capacity: %lu sectors(%lu MB), writeRatio:%d%%, sequentRatio:%d%%\n", ulTestSectors, ulTestSectors/(2*1024), ulCapacity, ulCapacity/(2*1024), ucWriteRatio, ucSequentRatio);
     mio_rwtest_run(ulTestSectors, ulCapacity, ucWriteRatio, ucSequentRatio);
 
     return 0;

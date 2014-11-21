@@ -289,7 +289,7 @@ static int mio_rwtest_init(ulong ulSectorsToTest, ulong ulCapacity, unsigned cha
     gstMioRwtestParam.uiWriteRatio = ucWriteRatio; // 0 ~ 100 %
     gstMioRwtestParam.uiSeqRatio = ucSequentRatio; // 0 ~ 100 %
 
-    gstMioRwtestParam.uiFlushCmdCycle =  100;
+  //gstMioRwtestParam.uiFlushCmdCycle =  100;
   //gstMioRwtestParam.uiStandbyCycle =   200;
   //gstMioRwtestParam.uiPowerdownCycle = 100000;
   //gstMioRwtestParam.uiTrimCycle = 1000;
@@ -304,6 +304,9 @@ static int mio_rwtest_init(ulong ulSectorsToTest, ulong ulCapacity, unsigned cha
 
   //gstMioRwtestParam.uiMinTransferSectors = (4*1024)/512;       //  4 KB
   //gstMioRwtestParam.uiMaxTransferSectors = (32*1024*1024)/512; // 32 MB
+
+  //gstMioRwtestParam.uiMinTransferSectors = (4*1024)/512;       //  4 KB
+  //gstMioRwtestParam.uiMaxTransferSectors = (4*1024*1024)/512;  //  4 MB
 
     gstMioRwtestParam.uiMinTransferSectors = (4*1024)/512;       //  4 KB
     gstMioRwtestParam.uiMaxTransferSectors = (4*1024*1024)/512;  //  4 MB
@@ -351,6 +354,7 @@ static ulong mio_rwtest_write(ulong blknr, lbaint_t blkcnt)
     unsigned int uiAddr=blknr, uiSectors=0, uiBlkIndex=0, uiBuffOffset=0;
     const unsigned int uiMaxSectorsInCmd = (gstMioRwtestParam.uiBuffSize/512);
     unsigned int *puiData=0;
+    unsigned int uiDataIdx=0, uiRandData=0;
 
     while(uiSectorsLeft)
     {
@@ -363,10 +367,26 @@ static ulong mio_rwtest_write(ulong blknr, lbaint_t blkcnt)
             puiData = (unsigned int *)(gstMioRwtestParam.pucBuff + (uiBuffOffset * 512));
 
             memset(puiData, 0, 512);
-            puiData[0] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
-            puiData[1] = (unsigned int)gstMioRwtestResult.uiCmdNo; // 2nd 4B: write command number
-            puiData[2] = (unsigned int)uiAddr;                     // 3rd 4B: start blknr of write command
-            puiData[3] = (unsigned int)uiSectors;                  // 4th 4B: blkcnt of write command
+            uiDataIdx = 0;
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+            puiData[uiDataIdx++] = (unsigned int)gstMioRwtestResult.uiCmdNo; // 2nd 4B: write command number
+            puiData[uiDataIdx++] = (unsigned int)uiAddr;                     // 3rd 4B: start blknr of write command
+            puiData[uiDataIdx++] = (unsigned int)uiSectors;                  // 4th 4B: blkcnt of write command
+
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+            puiData[uiDataIdx++] = (unsigned int)(uiAddr + uiBlkIndex);      // 1st 4B: blknr
+
+            uiRandData = rand();
+            for (; uiDataIdx < (512 / sizeof(puiData[0])); uiDataIdx++)
+            {
+                puiData[uiDataIdx] = uiRandData;
+            }
 
             uiByteIndex = puiData[0] / 32;
             uiBitIndex = puiData[0] % 32;
@@ -445,7 +465,7 @@ static ulong mio_rwtest_read_verify(ulong blknr, lbaint_t blkcnt)
 
                         gstMioRwtestResult.stErrInfo.uiAddress = uiAddr + uiBlkIndex;
                       //gstMioRwtestReslut.stErrInfo.uiSectors = 0;
-                        gstMioRwtestResult.stErrInfo.uiWrittenData = uiAddr;
+                        gstMioRwtestResult.stErrInfo.uiWrittenData = uiAddr + uiBlkIndex;
                         gstMioRwtestResult.stErrInfo.uiReadData = puiData[0];
                         gstMioRwtestResult.stErrInfo.uiCmdNo = puiData[1];
                         gstMioRwtestResult.stErrInfo.uiCmdStartAddr = puiData[2];
@@ -503,30 +523,30 @@ static void print_view_rwtest_result(void)
     {
         printf("\n");
         printf(" write command failed!\n");
-        printf("  Address: %X, Sectors: %X\n", gstMioRwtestResult.stErrInfo.uiAddress, gstMioRwtestResult.stErrInfo.uiSectors);
-        printf("  write command number       : %d\n", gstMioRwtestResult.stErrInfo.uiCmdNo);
-        printf("  write command start address: %d\n", gstMioRwtestResult.stErrInfo.uiCmdStartAddr);
-        printf("  write command sectors      : %d\n", gstMioRwtestResult.stErrInfo.uiCmdSectors);
+        printf("  Address: %xh, Sectors: %xh\n", gstMioRwtestResult.stErrInfo.uiAddress, gstMioRwtestResult.stErrInfo.uiSectors);
+        printf("  write command number       : %xh\n", gstMioRwtestResult.stErrInfo.uiCmdNo);
+        printf("  write command start address: %xh\n", gstMioRwtestResult.stErrInfo.uiCmdStartAddr);
+        printf("  write command sectors      : %xh\n", gstMioRwtestResult.stErrInfo.uiCmdSectors);
     }
 
     if (gstMioRwtestResult.uiError & (1<<1))
     {
         printf("\n");
         printf(" read command failed!\n");
-        printf("  address: %X, sectors: %X\n", gstMioRwtestResult.stErrInfo.uiAddress, gstMioRwtestResult.stErrInfo.uiSectors);
+        printf("  address: %x, sectors: %x\n", gstMioRwtestResult.stErrInfo.uiAddress, gstMioRwtestResult.stErrInfo.uiSectors);
     }
 
     if (gstMioRwtestResult.uiError & (1<<2))
     {
         printf("\n");
         printf(" Verify failed!\n");
-        printf("  address:%d",  gstMioRwtestResult.stErrInfo.uiAddress);
-        printf("  written data[0]: %08X\n", gstMioRwtestResult.stErrInfo.uiWrittenData);
-        printf("  read    data[0]: %08X\n", gstMioRwtestResult.stErrInfo.uiReadData);
-        printf("  This sector is written by the followings write command\n");
-        printf("   write command number                : %d\n", gstMioRwtestResult.stErrInfo.uiCmdNo);
-        printf("   previous write command start address: %d\n", gstMioRwtestResult.stErrInfo.uiCmdStartAddr);
-        printf("   previous write command sectors      : %d\n", gstMioRwtestResult.stErrInfo.uiCmdSectors);
+        printf("  address:%d\n",  gstMioRwtestResult.stErrInfo.uiAddress);
+        printf("  written data[0]: %08xh\n", gstMioRwtestResult.stErrInfo.uiWrittenData);
+        printf("  read    data[0]: %08xh\n", gstMioRwtestResult.stErrInfo.uiReadData);
+        printf("  This sector is written by the following write command\n");
+        printf("   write command number        : %xh\n", gstMioRwtestResult.stErrInfo.uiCmdNo);
+        printf("   write command start address : %xh\n", gstMioRwtestResult.stErrInfo.uiCmdStartAddr);
+        printf("   write command sectors       : %xh\n", gstMioRwtestResult.stErrInfo.uiCmdSectors);
     }
     printf("##########################\n");
 }

@@ -14,17 +14,73 @@
 #define __MIO_UBOOT_RWTEST_GLOBAL__
 
 #include "mio.uboot.rwtest.h"
+#include "media/exchange.h"
 
 #include <malloc.h>
 
 #include <mio.uboot.h>
 
 #define __SUPPORT_DEBUG_PRINT_MIO_UBOOT_RWTEST__
+
 #if defined (__SUPPORT_DEBUG_PRINT_MIO_UBOOT_RWTEST__)
     #define DBG_UBOOT_RWTEST(fmt, args...) printf(fmt, ##args)
 #else
     #define DBG_UBOOT_RWTEST(fmt, args...)
 #endif
+
+/*******************************************************************************
+ *
+ *******************************************************************************/
+#ifndef rand
+    /*
+     * Simple xorshift PRNG
+     *   see http://www.jstatsoft.org/v08/i14/paper
+     *
+     * Copyright (c) 2012 Michael Walle
+     * Michael Walle <michael@walle.cc>
+     *
+     * See file CREDITS for list of people who contributed to this
+     * project.
+     *
+     * This program is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU General Public License as
+     * published by the Free Software Foundation; either version 2 of
+     * the License, or (at your option) any later version.
+     *
+     * This program is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     * GNU General Public License for more details.
+     *
+     * You should have received a copy of the GNU General Public License
+     * along with this program; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+     * MA 02111-1307 USA
+     */
+
+    static unsigned int y = 1U;
+
+    unsigned int rand_r(unsigned int *seedp)
+    {
+        *seedp ^= (*seedp << 13);
+        *seedp ^= (*seedp >> 17);
+        *seedp ^= (*seedp << 5);
+
+        return *seedp;
+    }
+
+    unsigned int rand(void)
+    {
+        return rand_r(&y);
+    }
+
+    void srand(unsigned int seed)
+    {
+        y = seed;
+    }
+#endif
+
+#if defined (__COMPILE_MODE_RW_TEST__)
 
 /*******************************************************************************
  * local variables
@@ -84,60 +140,11 @@ static struct
 /*******************************************************************************
  * local functions
  *******************************************************************************/
-static int mio_rwtest_init(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteRatio, unsigned char ucSequentRatio);
+static int mio_rwtest_init(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteRatio, unsigned char ucSequentRatio, unsigned int uiRwBuffSize);
 static void mio_rwtest_deinit(void);
 static ulong mio_rwtest_write(ulong blknr, lbaint_t blkcnt);
 static ulong mio_rwtest_read_verify(ulong blknr, lbaint_t blkcnt);
 static void print_view_rwtest_result(void);
-
-#ifndef rand
-    /*
-     * Simple xorshift PRNG
-     *   see http://www.jstatsoft.org/v08/i14/paper
-     *
-     * Copyright (c) 2012 Michael Walle
-     * Michael Walle <michael@walle.cc>
-     *
-     * See file CREDITS for list of people who contributed to this
-     * project.
-     *
-     * This program is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU General Public License as
-     * published by the Free Software Foundation; either version 2 of
-     * the License, or (at your option) any later version.
-     *
-     * This program is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-     * GNU General Public License for more details.
-     *
-     * You should have received a copy of the GNU General Public License
-     * along with this program; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-     * MA 02111-1307 USA
-     */
-
-    static unsigned int y = 1U;
-
-    unsigned int rand_r(unsigned int *seedp)
-    {
-        *seedp ^= (*seedp << 13);
-        *seedp ^= (*seedp >> 17);
-        *seedp ^= (*seedp << 5);
-
-        return *seedp;
-    }
-
-    unsigned int rand(void)
-    {
-        return rand_r(&y);
-    }
-
-    void srand(unsigned int seed)
-    {
-        y = seed;
-    }
-#endif
 
 /*******************************************************************************
  *
@@ -153,7 +160,7 @@ int mio_rwtest_run(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteR
     unsigned int uiWriteSectors=0, uiReadSectors=0;
     unsigned char ucIsWrite=0, ucIsSequent=0;
     
-    siResp = mio_rwtest_init(ulTestSectors, ulCapacity, ucWriteRatio, ucSequentRatio);
+    siResp = mio_rwtest_init(ulTestSectors, ulCapacity, ucWriteRatio, ucSequentRatio, 10*1024*1024);
     if (siResp < 0)
     {
         DBG_UBOOT_RWTEST("mio_rwtest_run: mio_rwtest_init() error\n");
@@ -273,10 +280,151 @@ int mio_rwtest_run(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteR
     return 0;
 }
 
+#if 0 // mio write with fixed pattern
+typedef struct __RW_PATTERN__
+{
+	ulong blknr;
+	lbaint_t blkcnt;
+	const void *pvBuffer;
+} RW_PATTERN;
+
+RW_PATTERN w_pattern[] =
+{
+  // LBA      Sectors, data address 
+	{0x1,     0x8,    0x00000000},
+	{0x9,     0x8,    0x00000000},
+	{0x11,    0x38,   0x00000000},
+	{0x49,    0x10,   0x00000000},
+	{0x59,    0x800,  0x00000000},
+	{0x859,   0x2000, 0x00000000},
+	{0x2859,  0x8,    0x00000000},
+	{0x2861,  0x8,    0x00000000},
+	{0x2869,  0x8,    0x00000000},
+	{0x2871,  0x1C8,  0x00000000},
+	{0x2A39,  0x1778, 0x00000000},
+	{0x41B1,  0x710,  0x00000000},
+	{0x48C1,  0x288,  0x00000000},
+	{0x4B49,  0x20E0, 0x00000000},
+	{0x6C29,  0x1E0,  0x00000000},
+	{0x20001, 0x8,    0x00000000},
+	{0x20009, 0x8,    0x00000000},
+	{0x20011, 0x178,  0x00000000},
+	{0x20189, 0x10,   0x00000000},
+	{0x20199, 0xDA0,  0x00000000},
+	{0x20F39, 0x51C0, 0x00000000},
+	{0x260F9, 0x8,    0x00000000},
+	{0x26101, 0x8,    0x00000000},
+	{0x26109, 0x8,    0x00000000},
+	{0x26111, 0x8,    0x00000000},
+	{0x26119, 0x40,   0x00000000},
+	{0x26159, 0x610,  0x00000000},
+	{0x26769, 0x13D0, 0x00000000},
+	{0x27B39, 0x298,  0x00000000},
+	{0x27DD1, 0xE88,  0x00000000},
+	{0x28C59, 0x1EA8, 0x00000000},
+	{0x2AB01, 0x130,  0x00000000},
+	{0x2AC31, 0x1438, 0x00000000},
+	{0x2C069, 0x340,  0x00000000},
+	{0x2C3A9, 0x1C8,  0x00000000},
+	{0x2C571, 0x27F0, 0x00000000},
+	{0x2ED61, 0x8D8,  0x00000000},
+	{0x2F639, 0x210,  0x00000000},
+	{0x2F849, 0x2880, 0x00000000},
+	{0x320C9, 0x18,   0x00000000},
+	{0x320E1, 0x78,   0x00000000},
+	{0x32159, 0x90,   0x00000000},
+	{0x321E9, 0x5ED8, 0x00000000},
+	{0x380C1, 0xD60,  0x00000000},
+	{0x38E21, 0x160,  0x00000000},
+	{0x38F81, 0x1C8,  0x00000000},
+	{0x39149, 0x588,  0x00000000},
+	{0x396D1, 0xA8,   0x00000000},
+	{0x39779, 0x1710, 0x00000000},
+	{0x3AE89, 0x10,   0x00000000},
+	{0x3AE99, 0x2D8,  0x00000000},
+	{0x3B171, 0xA0,   0x00000000},
+	{0x3B211, 0x3A0,  0x00000000},
+	{0x3B5B1, 0x28,   0x00000000},
+	{0x3B5D9, 0x3F98, 0x00000000},
+	{0x3F571, 0x1C0,  0x00000000},
+	{0x3F731, 0x8,    0x00000000},
+	{0x3F739, 0x2D0,  0x00000000},
+	{0x3FA09, 0x108,  0x00000000},
+	{0x3FB11, 0xB0,   0x00000000},
+	{0x3FBC1, 0x18,   0x00000000},
+	{0x3FBD9, 0x28F8, 0x00000000},
+	{0x424D1, 0x188,  0x00000000},
+	{0x42659, 0x10,   0x00000000},
+	{0x42669, 0x8,    0x00000000},
+	{0x42671, 0xD8,   0x00000000}
+};
+
+int mio_rwtest_pattern_run(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteRatio, unsigned char ucSequentRatio)
+{
+    int MaxTestLoop=300000, CurrTestLoop=0;
+
+    int siResp=0;
+    //ulong ulStartSeconds=0;
+    unsigned int uiAddr=0, uiNextSeqWriteAddr=0, uiNextSeqReadAddr=0;
+    unsigned int uiSectors=0, uiTestSectors=0;
+    unsigned int uiWriteSectors=0, uiReadSectors=0;
+    unsigned char ucIsWrite=0, ucIsSequent=0;
+    int uiPatternIdx=0;
+
+    siResp = mio_rwtest_init(ulTestSectors, ulCapacity, ucWriteRatio, ucSequentRatio, 15*1024*1024);
+    if (siResp < 0)
+    {
+        DBG_UBOOT_RWTEST("mio_rwtest_pattern_run: mio_rwtest_init() error\n");
+    }
+    else
+    {
+        memset(&gstMioRwtestResult, 0, sizeof(gstMioRwtestResult));
+
+        srand(1234);
+
+        DBG_UBOOT_RWTEST("mio_rwtest_pattern_run: gstMioRwtestParam.uiCapacity:%lu, uiMaxTransferSectors:%lu, uiMinTransferSectors:%lu\n",
+            gstMioRwtestParam.uiCapacity, gstMioRwtestParam.uiMaxTransferSectors, gstMioRwtestParam.uiMinTransferSectors);
+
+        for (uiPatternIdx=0; uiPatternIdx < (sizeof(w_pattern)/sizeof(w_pattern[0])); uiPatternIdx++)
+        {
+            uiAddr = (unsigned int)w_pattern[uiPatternIdx].blknr;
+            uiSectors = (unsigned int)w_pattern[uiPatternIdx].blkcnt;
+
+            DBG_UBOOT_RWTEST("0x%08X mio_rwtest_write(0x%08x, 0x%8x), \tnextSeqAddr:0x%08x\n", CurrTestLoop, uiAddr, uiSectors, uiAddr + uiSectors);
+            uiWriteSectors = mio_rwtest_write(uiAddr, uiSectors);
+            if (uiWriteSectors != uiSectors)
+            {
+                DBG_UBOOT_RWTEST("mio_rwtest_write: error %d, %d\n", uiWriteSectors, uiSectors);
+                break;
+            }
+
+            gstMioRwtestResult.uiCmdNo += 1;
+
+            if (gstMioRwtestResult.uiError)
+                break;
+
+            CurrTestLoop++;
+            if (CurrTestLoop >= MaxTestLoop)
+            {
+                break;
+            }
+        }
+
+        DBG_UBOOT_RWTEST("mio_rwtest_pattern_run: Test end ! \n");
+
+    }
+
+  //print_view_rwtest_result();
+    mio_rwtest_deinit();
+
+    return 0;
+}
+#endif
+
 /*******************************************************************************
  * local functions
  *******************************************************************************/
-static int mio_rwtest_init(ulong ulSectorsToTest, ulong ulCapacity, unsigned char ucWriteRatio, unsigned char ucSequentRatio)
+static int mio_rwtest_init(ulong ulSectorsToTest, ulong ulCapacity, unsigned char ucWriteRatio, unsigned char ucSequentRatio, unsigned int uiRwBuffSize)
 {
     int siResp=-1;
     unsigned int uiBuffSize=0;
@@ -289,7 +437,7 @@ static int mio_rwtest_init(ulong ulSectorsToTest, ulong ulCapacity, unsigned cha
     gstMioRwtestParam.uiWriteRatio = ucWriteRatio; // 0 ~ 100 %
     gstMioRwtestParam.uiSeqRatio = ucSequentRatio; // 0 ~ 100 %
 
-  //gstMioRwtestParam.uiFlushCmdCycle =  100;
+    gstMioRwtestParam.uiFlushCmdCycle =  100;
   //gstMioRwtestParam.uiStandbyCycle =   200;
   //gstMioRwtestParam.uiPowerdownCycle = 100000;
   //gstMioRwtestParam.uiTrimCycle = 1000;
@@ -297,7 +445,7 @@ static int mio_rwtest_init(ulong ulSectorsToTest, ulong ulCapacity, unsigned cha
     gstMioRwtestParam.uiSectorsToTest = (unsigned int)ulSectorsToTest;
 
     // allocate buffer
-    gstMioRwtestParam.uiBuffSize = 10*1024*1024;
+    gstMioRwtestParam.uiBuffSize = uiRwBuffSize;
     gstMioRwtestParam.pucBuff = (unsigned char *)malloc(gstMioRwtestParam.uiBuffSize);
     if (!gstMioRwtestParam.pucBuff)
         siResp = -1;
@@ -550,3 +698,4 @@ static void print_view_rwtest_result(void)
     }
     printf("##########################\n");
 }
+#endif

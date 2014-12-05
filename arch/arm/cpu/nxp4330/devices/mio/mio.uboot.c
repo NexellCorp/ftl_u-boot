@@ -97,12 +97,6 @@ int mio_format(int _format_type)
     }
 
     /**************************************************************************
-     * MIO Exchange Init
-     **************************************************************************/
-    if (Exchange.debug.misc.uboot_format) { printf("MIO.FORMAT: EXCHANGE_init()\n"); }
-    EXCHANGE_init();
-
-    /**************************************************************************
      * MIO Debug Options
      **************************************************************************/
   //Exchange.debug.misc.block_thread = 1;
@@ -140,6 +134,12 @@ int mio_format(int _format_type)
   //Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
   //Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
     Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
+
+    /**************************************************************************
+     * MIO Exchange Init
+     **************************************************************************/
+    if (Exchange.debug.misc.uboot_format) { printf("MIO.FORMAT: EXCHANGE_init()\n"); }
+    EXCHANGE_init();
 
     /**************************************************************************
      * FTL Need Leaner Buffer
@@ -200,12 +200,6 @@ int mio_init(void)
     }
 
     /**************************************************************************
-     * MIO Exchange Init
-     **************************************************************************/
-    if (Exchange.debug.misc.uboot_init) { printf("MIO.INIT: EXCHANGE_init()\n"); }
-    EXCHANGE_init();
-
-    /**************************************************************************
      * MIO Debug Options
      **************************************************************************/
   //Exchange.debug.misc.block_thread = 1;
@@ -216,7 +210,7 @@ int mio_init(void)
   //Exchange.debug.misc.media_close = 1;
   //Exchange.debug.misc.smart_store = 1;
   //Exchange.debug.misc.uboot_format = 1;
-    Exchange.debug.misc.uboot_init = 1;
+  //Exchange.debug.misc.uboot_init = 1;
 
     Exchange.debug.ftl.format = 1;
     Exchange.debug.ftl.format_progress = 1;
@@ -245,10 +239,14 @@ int mio_init(void)
     Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
 
     /**************************************************************************
+     * MIO Exchange Init
+     **************************************************************************/
+    if (Exchange.debug.misc.uboot_init) { printf("MIO.INIT: EXCHANGE_init()\n"); }
+    EXCHANGE_init();
+
+    /**************************************************************************
      * FTL Need Leaner Buffer
      **************************************************************************/
-    if (Exchange.debug.misc.uboot_init) { Exchange.sys.fn.print("MIO.INIT: Memory Pool Pre-Allocation\n"); }
-
     Exchange.buffer.mpool_size  = 0;
     Exchange.buffer.mpool_size += 1 * 4 * (4<<20); // 1CH x 4WAY x 4MB (Page Map Table per Lun)
     Exchange.buffer.mpool_size += 1 * 4 * (1<<20); // 1CH x 4WAY x 1MB (Update Map Table per Lun)
@@ -352,6 +350,8 @@ int mio_init_rwtest_buffer(void)
     if (!gstRW.uiDataSize)
     {
         U32 i = 0;
+        U32 randValue = 0;
+        U32 ui_ofs = 0;
 
         gstRW.uiDataSize = 10 * 1024 * 1024;
 
@@ -371,9 +371,23 @@ int mio_init_rwtest_buffer(void)
             return -1;
         }
 
-        for (i = 0; i < gstRW.uiDataSize / 4; i++)
+        for (i = 0; i < (gstRW.uiDataSize / 4); i++)
         {
-            ((U32 *)gstRW.pucWData)[i] = i;
+            ui_ofs = i % (512/4);
+
+            if (!ui_ofs)
+            {
+                randValue = (U32)0xAAAA5555; //rand();
+            }
+        
+            if (ui_ofs < 8) //if (ui_ofs < 8)
+            {
+                ((U32 *)gstRW.pucWData)[i] = i/(512/4);
+            }
+            else
+            {
+                ((U32 *)gstRW.pucWData)[i] = randValue;
+            }
         }
 
         printf("WriteBuff: 0x%0X, ReadBuff: 0x%0X\n", (U32)gstRW.pucWData, (U32)gstRW.pucRData);
@@ -762,6 +776,45 @@ int mio_init_without_ftl(void)
 {
     int ret = 0;
 
+    /**************************************************************************
+     * MIO Debug Options
+     **************************************************************************/
+  //Exchange.debug.misc.block_thread = 1;
+  //Exchange.debug.misc.block_transaction = 1;
+  //Exchange.debug.misc.block_background = 1;
+  //Exchange.debug.misc.media_open = 1;
+  //Exchange.debug.misc.media_format = 1;
+  //Exchange.debug.misc.media_close = 1;
+  //Exchange.debug.misc.smart_store = 1;
+  //Exchange.debug.misc.uboot_format = 1;
+    Exchange.debug.misc.uboot_init = 1;
+
+    Exchange.debug.ftl.format = 1;
+    Exchange.debug.ftl.format_progress = 1;
+    Exchange.debug.ftl.configurations = 1;
+    Exchange.debug.ftl.open = 1;
+    Exchange.debug.ftl.memory_usage = 1;
+    Exchange.debug.ftl.boot = 1;
+    Exchange.debug.ftl.block_summary = 1;
+    Exchange.debug.ftl.warn = 1;
+    Exchange.debug.ftl.error = 1;
+
+  //Exchange.debug.nfc.sche.operation = 1;
+
+  //Exchange.debug.nfc.phy.operation = 1;
+  //Exchange.debug.nfc.phy.info_feature = 1;
+  //Exchange.debug.nfc.phy.info_ecc = 1;
+  //Exchange.debug.nfc.phy.info_ecc_correction = 1;
+  //Exchange.debug.nfc.phy.info_ecc_corrected = 1;
+  //Exchange.debug.nfc.phy.info_randomizer = 1;
+  //Exchange.debug.nfc.phy.info_readretry = 1;
+  //Exchange.debug.nfc.phy.info_readretry_table = 1;
+  //Exchange.debug.nfc.phy.info_readretry_otp_table = 1;
+    Exchange.debug.nfc.phy.warn_prohibited_block_access = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable = 1;
+  //Exchange.debug.nfc.phy.warn_ecc_uncorrectable_show = 1;
+    Exchange.debug.nfc.phy.err_ecc_uncorrectable = 1;
+
     ret = NFC_PHY_LOWAPI_init();
 
 #if defined (MEDIA_READ_WRITE_TEST)
@@ -1015,6 +1068,7 @@ static void mio_fill_write_cache(const void *pvBuff, U32 uiSectors)
  *******************************************************************************/
 int mio_rwtest(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteRatio, unsigned char ucSequentRatio)
 {
+#if defined (__COMPILE_MODE_RW_TEST__)
     if (!is_mio_init)
     {
         Exchange.sys.fn.print("mio_nand_write(): mio is not initialized!!\n");
@@ -1042,6 +1096,7 @@ int mio_rwtest(ulong ulTestSectors, ulong ulCapacity, unsigned char ucWriteRatio
 
     Exchange.sys.fn.print("mio_rwtest(): %lu sectors(%lu MB), Capacity: %lu sectors(%lu MB), writeRatio:%d%%, sequentRatio:%d%%\n", ulTestSectors, ulTestSectors/(2*1024), ulCapacity, ulCapacity/(2*1024), ucWriteRatio, ucSequentRatio);
     mio_rwtest_run(ulTestSectors, ulCapacity, ucWriteRatio, ucSequentRatio);
-
+#endif
     return 0;
 }
+

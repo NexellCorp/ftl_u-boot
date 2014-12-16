@@ -419,6 +419,82 @@ void mio_deinit_rwtest_buffer(void)
  *******************************************************************************/
 int mio_info(void)
 {
+#if 0
+    loff_t ofs = 0;
+    size_t len = 0;
+    u_char *buf = 0;
+
+    int i = 0;
+
+    for (i = 0; i < gstRW.uiDataSize / 4; i++)
+    {
+        ((U32 *)gstRW.pucWData)[i] = i;
+    }
+
+    {
+        int block = 0x100;
+
+        // #1.1. EraseB-WriteP[0..15]-ReadP[0..15].ala
+      //buf = 0;                        ofs = block*16384*256; len = 16384*256; mio_nand_erase(ofs, len);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256; len = 16384*16;  mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucRData; ofs = block*16384*256; len = 16384*16;  mio_nand_read(ofs, &len, buf);
+
+        // #2.1. EraseB-WriteP[0..7]-WirteP[8..15]-ReadP[0..15].ala
+      //buf = 0;                        ofs = block*16384*256;         len = 16384*256; mio_nand_erase(ofs, len);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256;         len = 16384*8;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*8; len = 16384*8;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucRData; ofs = block*16384*256;         len = 16384*16;  mio_nand_read(ofs, &len, buf);
+
+        // #3.1. EraseB-WriteP[0..4]-WriteP[8..11]-ReadP[0..15].ala
+        // #3.2. EraseB-WriteP[0..4]-WriteP[8..11]-ReadP[0..15].ala
+        // #3.3. EraseB-WriteP[0..4]-WriteP[8..11]-ReadP[0..15].ala
+      //buf = 0;                        ofs = block*16384*256;         len = 16384*256; mio_nand_erase(ofs, len);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256;         len = 16384*4;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*8; len = 16384*4;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucRData; ofs = block*16384*256;         len = 16384*16;  mio_nand_read(ofs, &len, buf);
+
+        // #4.1. EraseB-WriteP[0..5]-WriteP[8..11]-ReadP[0..15].ala
+        // #4.2. EraseB-WriteP[0..5]-WriteP[8..11]-ReadP[0..15].ala
+        // #4.3. EraseB-WriteP[0..5]-WriteP[8..11]-ReadP[0..15].ala
+      //buf = 0;                        ofs = block*16384*256;         len = 16384*256; mio_nand_erase(ofs, len);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256;         len = 16384*5;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*8; len = 16384*4;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucRData; ofs = block*16384*256;         len = 16384*16;  mio_nand_read(ofs, &len, buf);
+
+        // #5.1. EraseB-WriteP[0..5]-WriteP[7]-WriteP[9..11]-ReadP[0..15].ala
+        // #5.2. EraseB-WriteP[0..5]-WriteP[7]-WriteP[9..11]-ReadP[0..15].ala
+        // #5.3. EraseB-WriteP[0..5]-WriteP[7]-WriteP[9..11]-ReadP[0..15].ala
+      //buf = 0;                        ofs = block*16384*256;         len = 16384*256; mio_nand_erase(ofs, len);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256;         len = 16384*6;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*7; len = 16384*1;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*9; len = 16384*5;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucRData; ofs = block*16384*256;         len = 16384*16;  mio_nand_read(ofs, &len, buf);
+
+        // #6.1. EraseB-WriteP[0..1]-WriteP[3]-WriteP[5]-WriteP[7]-WriteP[9]-WriteP[11]-WriteP[13]-WriteP[15]-ReadP[0..15].ala
+        // #6.2. EraseB-WriteP[0..1]-WriteP[3]-WriteP[5]-WriteP[7]-WriteP[9]-WriteP[11]-WriteP[13]-WriteP[15]-ReadP[0..15].ala
+        // #6.3. EraseB-WriteP[0..1]-WriteP[3]-WriteP[5]-WriteP[7]-WriteP[9]-WriteP[11]-WriteP[13]-WriteP[15]-ReadP[0..15].ala
+      //buf = 0;                        ofs = block*16384*256;          len = 16384*256; mio_nand_erase(ofs, len);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256;          len = 16384*2;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*3;  len = 16384*1;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*5;  len = 16384*1;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*7;  len = 16384*1;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*9;  len = 16384*1;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*11; len = 16384*1;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*13; len = 16384*1;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*15; len = 16384*1;   mio_nand_write(ofs, &len, buf);
+      //buf = (u_char *)gstRW.pucRData; ofs = block*16384*256;          len = 16384*16;  mio_nand_read(ofs, &len, buf);
+
+        // #7.1. EraseB-WriteP[0..5]-WriteP[9..15]-ReadP[0..15].ala
+        // #7.2. EraseB-WriteP[0..5]-WriteP[9..15]-ReadP[0..15].ala
+        // #7.3. EraseB-WriteP[0..5]-WriteP[9..15]-ReadP[0..15].ala
+        buf = 0;                        ofs = block*16384*256;          len = 16384*256; mio_nand_erase(ofs, len);
+        buf = (u_char *)gstRW.pucWData; ofs = block*16384*256;          len = 16384*6;   mio_nand_write(ofs, &len, buf);
+        buf = (u_char *)gstRW.pucWData; ofs = block*16384*256+16384*9;  len = 16384*7;   mio_nand_write(ofs, &len, buf);
+        buf = (u_char *)gstRW.pucRData; ofs = block*16384*256;          len = 16384*16;  mio_nand_read(ofs, &len, buf);
+
+    }
+
+#else
     NAND * nand = (NAND *)&phy_features.nand_config;
 
     printf("\n NAND INFORMATION");
@@ -502,7 +578,7 @@ int mio_info(void)
 
     printf("*******************************************************************************\n");
     printf("\n");
-
+#endif
     return 0;
 }
 
